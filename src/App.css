@@ -594,3 +594,140 @@ textarea.input-field {
 .diff-removed-text {
   color: transparent;
 }
+
+/* JSON Beautifier 구문 강조 */
+.json-output {
+  background: var(--bg-muted);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 12px;
+  font-family: 'Geist Mono', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.json-output.json-placeholder {
+  color: var(--text-muted);
+}
+
+.json-line {
+  display: flex;
+  min-height: 1.6em;
+}
+
+.json-indent-block {
+  display: inline-block;
+}
+
+/* JSON 구문 색상 */
+.json-key {
+  color: #f0a875;
+}
+
+.json-string {
+  color: #a5d6a7;
+}
+
+.json-number {
+  color: #90caf9;
+}
+
+.json-boolean {
+  color: #ce93d8;
+}
+
+.json-null {
+  color: #ef9a9a;
+}
+
+.json-bracket {
+  color: var(--text-primary);
+}
+
+.json-colon,
+.json-comma {
+  color: var(--text-muted);
+}
+
+/* 라이트 테마 JSON 색상 */
+[data-theme="light"] .json-key {
+  color: #b45309;
+}
+
+[data-theme="light"] .json-string {
+  color: #15803d;
+}
+
+[data-theme="light"] .json-number {
+  color: #1d4ed8;
+}
+
+[data-theme="light"] .json-boolean {
+  color: #7c3aed;
+}
+
+[data-theme="light"] .json-null {
+  color: #dc2626;
+}
+
+/* Rainbow Toggle (shadcn style) */
+.rainbow-toggle {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 6px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.rainbow-toggle:hover {
+  background: var(--bg-hover);
+}
+
+.rainbow-toggle-thumb {
+  position: relative;
+  width: 42px;
+  height: 24px;
+  background: var(--border-color);
+  border-radius: 12px;
+  transition: all 0.15s ease;
+}
+
+.rainbow-toggle-thumb::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  background: var(--bg-primary);
+  border-radius: 50%;
+  transition: transform 0.15s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.rainbow-toggle.active .rainbow-toggle-thumb {
+  background: linear-gradient(
+    90deg,
+    #ff8080,
+    /* #ffc880, */
+    #ffff80,
+    /* #80ff80, */
+    #80c8ff,
+    /* #8080ff, */
+    #c880ff
+  );
+}
+
+.rainbow-toggle.active .rainbow-toggle-thumb::after {
+  transform: translateX(18px);
+}
+
+.rainbow-toggle:hover .rainbow-toggle-thumb {
+  opacity: 0.9;
+}

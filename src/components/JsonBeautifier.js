@@ -1,4 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+
+// 무지개 색상 (들여쓰기 레벨별)
+const RAINBOW_COLORS = [
+  'rgba(255, 128, 128, 0.15)',  // 빨강
+  'rgba(255, 200, 128, 0.15)',  // 주황
+  'rgba(255, 255, 128, 0.15)',  // 노랑
+  'rgba(128, 255, 128, 0.15)',  // 초록
+  'rgba(128, 200, 255, 0.15)',  // 하늘
+  'rgba(128, 128, 255, 0.15)',  // 파랑
+  'rgba(200, 128, 255, 0.15)',  // 보라
+];
 
 function JsonBeautifier() {
   const [input, setInput] = useState('');
@@ -7,6 +18,156 @@ function JsonBeautifier() {
   const [indentSize, setIndentSize] = useState(2);
   const [mode, setMode] = useState('beautify');
   const [copied, setCopied] = useState(false);
+  const [rainbowIndent, setRainbowIndent] = useState(true);
+  const inputRef = useRef(null);
+  const outputRef = useRef(null);
+
+  // JSON 구문 강조 및 무지개 들여쓰기
+  const highlightedOutput = useMemo(() => {
+    if (!output || mode === 'minify') return null;
+
+    const lines = output.split('\n');
+    
+    return lines.map((line, lineIdx) => {
+      // 들여쓰기 레벨 계산
+      const leadingSpaces = line.match(/^(\s*)/)[1].length;
+      const indentLevel = Math.floor(leadingSpaces / indentSize);
+      
+      // 들여쓰기 부분과 내용 부분 분리
+      const contentPart = line.substring(leadingSpaces);
+      
+      // 구문 강조 적용
+      const highlightedContent = highlightJson(contentPart);
+      
+      // 무지개 들여쓰기 블록 생성
+      const indentBlocks = [];
+      for (let i = 0; i < indentLevel; i++) {
+        indentBlocks.push(
+          <span
+            key={i}
+            className="json-indent-block"
+            style={{ 
+              backgroundColor: rainbowIndent ? RAINBOW_COLORS[i % RAINBOW_COLORS.length] : 'transparent',
+              width: indentSize + 'ch'
+            }}
+          >
+            {' '.repeat(indentSize)}
+          </span>
+        );
+      }
+      
+      // 남은 공백 (indentLevel * indentSize 이후의 공백)
+      const remainingSpaces = leadingSpaces - (indentLevel * indentSize);
+      
+      return (
+        <div key={lineIdx} className="json-line">
+          {indentBlocks}
+          {remainingSpaces > 0 && <span>{' '.repeat(remainingSpaces)}</span>}
+          {highlightedContent}
+        </div>
+      );
+    });
+  }, [output, indentSize, mode, rainbowIndent]);
+
+  // JSON 구문 강조 함수
+  function highlightJson(text) {
+    if (!text) return null;
+    
+    const result = [];
+    let remaining = text;
+    let key = 0;
+    
+    while (remaining.length > 0) {
+      // 키 (따옴표로 시작하고 : 로 끝나는 패턴)
+      let match = remaining.match(/^("(?:[^"\\]|\\.)*")\s*:/);
+      if (match) {
+        result.push(<span key={key++} className="json-key">{match[1]}</span>);
+        result.push(<span key={key++} className="json-colon">:</span>);
+        remaining = remaining.substring(match[0].length);
+        continue;
+      }
+      
+      // 문자열 값
+      match = remaining.match(/^("(?:[^"\\]|\\.)*")/);
+      if (match) {
+        result.push(<span key={key++} className="json-string">{match[1]}</span>);
+        remaining = remaining.substring(match[0].length);
+        continue;
+      }
+      
+      // 숫자
+      match = remaining.match(/^(-?\d+\.?\d*(?:[eE][+-]?\d+)?)/);
+      if (match) {
+        result.push(<span key={key++} className="json-number">{match[1]}</span>);
+        remaining = remaining.substring(match[0].length);
+        continue;
+      }
+      
+      // boolean
+      match = remaining.match(/^(true|false)/);
+      if (match) {
+        result.push(<span key={key++} className="json-boolean">{match[1]}</span>);
+        remaining = remaining.substring(match[0].length);
+        continue;
+      }
+      
+      // null
+      match = remaining.match(/^(null)/);
+      if (match) {
+        result.push(<span key={key++} className="json-null">{match[1]}</span>);
+        remaining = remaining.substring(match[0].length);
+        continue;
+      }
+      
+      // 괄호
+      match = remaining.match(/^([\[\]{}])/);
+      if (match) {
+        result.push(<span key={key++} className="json-bracket">{match[1]}</span>);
+        remaining = remaining.substring(match[0].length);
+        continue;
+      }
+      
+      // 콤마
+      match = remaining.match(/^(,)/);
+      if (match) {
+        result.push(<span key={key++} className="json-comma">{match[1]}</span>);
+        remaining = remaining.substring(match[0].length);
+        continue;
+      }
+      
+      // 공백
+      match = remaining.match(/^(\s+)/);
+      if (match) {
+        result.push(<span key={key++}>{match[1]}</span>);
+        remaining = remaining.substring(match[0].length);
+        continue;
+      }
+      
+      // 기타
+      result.push(<span key={key++}>{remaining[0]}</span>);
+      remaining = remaining.substring(1);
+    }
+    
+    return result;
+  }
+
+  // 높이 동기화
+  const syncHeight = () => {
+    const inputEl = inputRef.current;
+    const outputEl = outputRef.current;
+    
+    if (inputEl) {
+      inputEl.style.height = 'auto';
+    }
+    
+    const inputHeight = inputEl ? inputEl.scrollHeight : 200;
+    const outputHeight = outputEl ? outputEl.scrollHeight : 200;
+    const maxHeight = Math.max(200, inputHeight, outputHeight);
+    
+    if (inputEl) {
+      inputEl.style.height = maxHeight + 'px';
+    }
+  };
 
   useEffect(() => {
     if (!input.trim()) {
@@ -29,6 +190,10 @@ function JsonBeautifier() {
     }
   }, [input, indentSize, mode]);
 
+  useEffect(() => {
+    syncHeight();
+  }, [input, output]);
+
   const copyToClipboard = () => {
     if (output) {
       navigator.clipboard.writeText(output);
@@ -50,7 +215,7 @@ function JsonBeautifier() {
         <p>JSON을 실시간으로 포맷팅하거나 압축합니다.</p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', alignItems: 'start' }}>
         <div className="tool-card" style={{ marginBottom: 0 }}>
           <div className="card-header">
             <h3>입력</h3>
@@ -59,11 +224,12 @@ function JsonBeautifier() {
             </button>
           </div>
           <textarea
+            ref={inputRef}
             className="input-field"
             placeholder='{"name":"홍길동","age":30}'
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            style={{ minHeight: '400px', resize: 'vertical' }}
+            style={{ minHeight: 200, resize: 'none', overflow: 'hidden' }}
           />
         </div>
 
@@ -100,23 +266,38 @@ function JsonBeautifier() {
               )}
             </div>
             {output && (
-              <button className="btn btn-secondary" onClick={copyToClipboard} style={{ padding: '6px 12px', fontSize: '13px' }}>
-                {copied ? '✓' : '복사'}
-              </button>
+              <div className="btn-group">
+                {mode === 'beautify' && (
+                  <button
+                    className={`rainbow-toggle ${rainbowIndent ? 'active' : ''}`}
+                    onClick={() => setRainbowIndent(!rainbowIndent)}
+                    title="무지개 들여쓰기"
+                  >
+                    <span className="rainbow-toggle-thumb" />
+                  </button>
+                )}
+                <button className="btn btn-secondary" onClick={copyToClipboard} style={{ padding: '6px 12px', fontSize: '13px' }}>
+                  {copied ? '✓' : '복사'}
+                </button>
+              </div>
             )}
           </div>
           {error ? (
-            <div className="output-area error" style={{ minHeight: '400px' }}>
+            <div className="output-area error" style={{ minHeight: 200 }}>
               {error}
             </div>
+          ) : output ? (
+            <div
+              ref={outputRef}
+              className="json-output"
+              style={{ minHeight: 200 }}
+            >
+              {mode === 'beautify' ? highlightedOutput : output}
+            </div>
           ) : (
-            <textarea
-              className="input-field"
-              value={output}
-              readOnly
-              placeholder="유효한 JSON을 입력하면 여기에 결과가 표시됩니다."
-              style={{ minHeight: '400px', resize: 'vertical' }}
-            />
+            <div className="json-output json-placeholder" style={{ minHeight: 200 }}>
+              유효한 JSON을 입력하면 여기에 결과가 표시됩니다.
+            </div>
           )}
         </div>
       </div>
@@ -127,18 +308,11 @@ function JsonBeautifier() {
           <div className="stats-grid">
             <div className="stat-card">
               <div className="stat-value">{input.length.toLocaleString()}</div>
-              <div className="stat-label">원본 (문자)</div>
+              <div className="stat-label">원본 (전체 글자수)</div>
             </div>
             <div className="stat-card">
               <div className="stat-value">{output.length.toLocaleString()}</div>
-              <div className="stat-label">결과 (문자)</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-value">
-                {input.length > output.length ? '-' : '+'}
-                {Math.abs(((output.length - input.length) / input.length * 100)).toFixed(1)}%
-              </div>
-              <div className="stat-label">변화율</div>
+              <div className="stat-label">결과 (전체 글자수)</div>
             </div>
             <div className="stat-card">
               <div className="stat-value">
