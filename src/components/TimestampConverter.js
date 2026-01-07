@@ -175,9 +175,9 @@ function TimestampConverter() {
               <button 
                 className="btn btn-ghost" 
                 style={{ marginTop: '8px', padding: '4px 8px', fontSize: '12px' }}
-                onClick={() => copyToClipboard(timestampResult.formatted, 'kst')}
+                onClick={() => copyToClipboard(timestampResult.formatted, 'result-kst')}
               >
-                {copiedKey === 'kst' ? '✓' : '복사'}
+                {copiedKey === 'result-kst' ? '✓' : '복사'}
               </button>
             </div>
           )}

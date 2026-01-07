@@ -15,7 +15,7 @@ const menuItems = [
   { path: '/jwt-decode', name: 'JWT Decoder' },
   { path: '/sha256', name: 'SHA256 암호화' },
   { path: '/json', name: 'JSON Beautifier' },
-  { path: '/timestamp', name: 'Timestamp 변환' },
+  { path: '/timestamp', name: 'Timestamp 변환기' },
   { path: '/byte', name: 'Byte 계산기' },
   { path: '/char', name: '글자수 세기' },
   { path: '/diff', name: 'Text Diff 비교' },
