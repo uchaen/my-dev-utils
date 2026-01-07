@@ -185,33 +185,6 @@ function JwtEncode() {
         </div>
       </div>
 
-      {output && (
-        <div className="tool-card" style={{ marginTop: '16px' }}>
-          <h3>정보</h3>
-          <div className="stats-grid">
-            <div className="stat-card">
-              <div className="stat-value">{output.length}</div>
-              <div className="stat-label">문자 길이</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-value">
-                {(() => {
-                  try {
-                    return JSON.parse(header).alg || 'N/A';
-                  } catch {
-                    return 'N/A';
-                  }
-                })()}
-              </div>
-              <div className="stat-label">알고리즘</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-value">{output.split('.').length}</div>
-              <div className="stat-label">파트 수</div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -96,29 +96,6 @@ function Sha256Tool() {
         </div>
       </div>
 
-      {output && (
-        <div className="tool-card" style={{ marginTop: '16px' }}>
-          <h3>정보</h3>
-          <div className="stats-grid">
-            <div className="stat-card">
-              <div className="stat-value">{input.length}</div>
-              <div className="stat-label">입력 길이</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-value">{output.length}</div>
-              <div className="stat-label">결과 길이</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-value">256</div>
-              <div className="stat-label">비트</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-value">32</div>
-              <div className="stat-label">바이트</div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
