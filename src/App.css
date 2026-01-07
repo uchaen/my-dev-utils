@@ -197,6 +197,7 @@
   color: var(--text-primary);
   font-size: 14px;
   transition: border-color 0.15s, box-shadow 0.15s;
+  box-sizing: border-box;
 }
 
 .input-field:focus {
@@ -478,4 +479,118 @@ textarea.input-field {
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+}
+
+/* Diff Container */
+.diff-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: stretch;
+}
+
+.diff-card {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0;
+}
+
+/* Diff Textarea */
+.diff-textarea {
+  flex: 1;
+  background: var(--bg-muted) !important;
+  font-family: 'Geist Mono', monospace !important;
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+  min-height: 200px;
+  resize: none !important;
+  overflow: hidden !important;
+}
+
+/* Diff Editor */
+.diff-editor {
+  flex: 1;
+  position: relative;
+  background: var(--bg-muted);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-family: 'Geist Mono', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  overflow: visible;
+  box-sizing: border-box;
+  min-height: 200px;
+}
+
+.diff-highlight-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 8px 12px;
+  pointer-events: none;
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: transparent;
+}
+
+.diff-highlight-line {
+  min-height: 1.6em;
+  color: transparent;
+}
+
+.diff-input-layer {
+  position: relative;
+  min-height: 100%;
+  padding: 8px 12px;
+  color: var(--text-primary);
+  background: transparent;
+  outline: none;
+  white-space: pre-wrap;
+  word-break: break-all;
+  caret-color: var(--text-primary);
+}
+
+.diff-input-layer:empty::before {
+  content: attr(data-placeholder);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.diff-highlight-line.diff-line-added {
+  background: hsla(142, 76%, 36%, 0.2);
+  border-left: 3px solid #22c55e;
+  margin-left: -12px;
+  padding-left: 9px;
+}
+
+.diff-highlight-line.diff-line-removed {
+  background: hsla(0, 84%, 60%, 0.2);
+  border-left: 3px solid #ef4444;
+  margin-left: -12px;
+  padding-left: 9px;
+}
+
+.diff-highlight-line.diff-line-modified {
+  background: hsla(45, 93%, 47%, 0.1);
+  border-left: 3px solid #eab308;
+  margin-left: -12px;
+  padding-left: 9px;
+}
+
+/* 문자 단위 하이라이트 */
+.diff-char-added {
+  background: hsla(142, 76%, 36%, 0.4);
+  color: transparent;
+  border-radius: 2px;
+}
+
+.diff-char-removed {
+  background: hsla(0, 84%, 60%, 0.4);
+  color: transparent;
+  border-radius: 2px;
+}
+
+.diff-removed-text {
+  color: transparent;
 }

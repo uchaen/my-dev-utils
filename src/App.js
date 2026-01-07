@@ -8,6 +8,7 @@ import JsonBeautifier from './components/JsonBeautifier';
 import TimestampConverter from './components/TimestampConverter';
 import ByteCounter from './components/ByteCounter';
 import CharacterCounter from './components/CharacterCounter';
+import DiffTool from './components/DiffTool';
 
 const menuItems = [
   { path: '/jwt-encode', name: 'JWT Encoder' },
@@ -17,6 +18,7 @@ const menuItems = [
   { path: '/timestamp', name: 'Timestamp 변환' },
   { path: '/byte', name: 'Byte 계산기' },
   { path: '/char', name: '글자수 세기' },
+  { path: '/diff', name: 'Text Diff 비교' },
 ];
 
 // Simple SVG Icons
@@ -122,6 +124,7 @@ function App() {
             <Route path="/timestamp" element={<TimestampConverter />} />
             <Route path="/byte" element={<ByteCounter />} />
             <Route path="/char" element={<CharacterCounter />} />
+            <Route path="/diff" element={<DiffTool />} />
           </Routes>
         </main>
       </div>
