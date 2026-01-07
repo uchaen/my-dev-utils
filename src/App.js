@@ -6,8 +6,7 @@ import JwtDecode from './components/JwtDecode';
 import Sha256Tool from './components/Sha256Tool';
 import JsonBeautifier from './components/JsonBeautifier';
 import TimestampConverter from './components/TimestampConverter';
-import ByteCounter from './components/ByteCounter';
-import CharacterCounter from './components/CharacterCounter';
+import TextSizeCalculator from './components/TextSizeCalculator';
 import DiffTool from './components/DiffTool';
 
 const menuItems = [
@@ -16,8 +15,7 @@ const menuItems = [
   { path: '/sha256', name: 'SHA256 암호화' },
   { path: '/json', name: 'JSON Beautifier' },
   { path: '/timestamp', name: 'Timestamp 변환기' },
-  { path: '/byte', name: 'Byte 계산기' },
-  { path: '/char', name: '글자수 세기' },
+  { path: '/text-size', name: 'Text Size 계산기' },
   { path: '/diff', name: 'Text Diff 비교' },
 ];
 
@@ -122,8 +120,7 @@ function App() {
             <Route path="/sha256" element={<Sha256Tool />} />
             <Route path="/json" element={<JsonBeautifier />} />
             <Route path="/timestamp" element={<TimestampConverter />} />
-            <Route path="/byte" element={<ByteCounter />} />
-            <Route path="/char" element={<CharacterCounter />} />
+            <Route path="/text-size" element={<TextSizeCalculator />} />
             <Route path="/diff" element={<DiffTool />} />
           </Routes>
         </main>
