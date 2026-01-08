@@ -39,7 +39,7 @@ function JwtDecode() {
       });
       setError('');
     } catch (err) {
-      setError('JWT 디코딩 실패: ' + err.message);
+      setError('JWT 디코딩 실패: 올바른 JWT 형식인지 확인하세요.');
       setDecoded(null);
     }
   }, [token]);

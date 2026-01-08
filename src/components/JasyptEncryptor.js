@@ -56,7 +56,7 @@ function jasyptEncrypt(text, password) {
 
     return saltAndCiphertext.toString(CryptoJS.enc.Base64);
   } catch (error) {
-    return '암호화 오류: ' + error.message;
+    return '암호화 오류: 입력값을 확인하세요.';
   }
 }
 
@@ -100,7 +100,7 @@ function jasyptDecrypt(encryptedText, password) {
 
     return result;
   } catch (error) {
-    return '복호화 오류: ' + error.message;
+    return '복호화 오류: 입력값을 확인하세요.';
   }
 }
 

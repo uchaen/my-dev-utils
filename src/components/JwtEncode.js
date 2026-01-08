@@ -112,7 +112,7 @@ function JwtEncode() {
       setOutput(token);
       setError('');
     } catch (err) {
-      setError(err.message);
+      setError('JWT 생성 오류: 입력값을 확인하세요.');
       setOutput('');
     }
   }, [header, payload, secret]);
