@@ -209,23 +209,23 @@ function JsonBeautifier() {
   };
 
   return (
-    <div className="tool-container" style={{ maxWidth: '100%' }}>
+    <div className="tool-container tool-container-full">
       <div className="tool-header">
         <h2>JSON Beautifier</h2>
         <p>JSON을 실시간으로 포맷팅하거나 압축합니다.</p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', alignItems: 'start' }}>
-        <div className="tool-card" style={{ marginBottom: 0 }}>
+      <div className="tool-grid-start">
+        <div className="tool-card tool-card-no-margin">
           <div className="card-header">
             <h3>입력</h3>
-            <button className="btn btn-secondary" onClick={clearAll} style={{ padding: '6px 12px', fontSize: '13px' }}>
+            <button className="btn btn-secondary btn-small" onClick={clearAll}>
               초기화
             </button>
           </div>
           <textarea
             ref={inputRef}
-            className="input-field"
+            className="input-field output-medium"
             placeholder='{"name":"홍길동","age":30}'
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -233,7 +233,7 @@ function JsonBeautifier() {
           />
         </div>
 
-        <div className="tool-card" style={{ marginBottom: 0 }}>
+        <div className="tool-card tool-card-no-margin">
           <div className="card-header">
             <div className="card-header-left">
               <h3>결과</h3>
@@ -276,26 +276,25 @@ function JsonBeautifier() {
                     <span className="rainbow-toggle-thumb" />
                   </button>
                 )}
-                <button className="btn btn-secondary" onClick={copyToClipboard} style={{ padding: '6px 12px', fontSize: '13px' }}>
+                <button className="btn btn-secondary btn-small" onClick={copyToClipboard}>
                   {copied ? '✓' : '복사'}
                 </button>
               </div>
             )}
           </div>
           {error ? (
-            <div className="output-area error" style={{ minHeight: 200 }}>
+            <div className="output-area error output-medium">
               {error}
             </div>
           ) : output ? (
             <div
               ref={outputRef}
-              className="json-output"
-              style={{ minHeight: 200 }}
+              className="json-output output-medium"
             >
               {mode === 'beautify' ? highlightedOutput : output}
             </div>
           ) : (
-            <div className="json-output json-placeholder" style={{ minHeight: 200 }}>
+            <div className="json-output json-placeholder output-medium">
               유효한 JSON을 입력하면 여기에 결과가 표시됩니다.
             </div>
           )}
@@ -303,7 +302,7 @@ function JsonBeautifier() {
       </div>
 
       {input && output && (
-        <div className="tool-card" style={{ marginTop: '16px' }}>
+        <div className="tool-card mt-16">
           <h3>통계</h3>
           <div className="stats-grid">
             <div className="stat-card">

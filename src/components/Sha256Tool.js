@@ -36,30 +36,29 @@ function Sha256Tool() {
   };
 
   return (
-    <div className="tool-container" style={{ maxWidth: '100%' }}>
+    <div className="tool-container tool-container-full">
       <div className="tool-header">
         <h2>SHA256 암호화</h2>
         <p>텍스트를 실시간으로 SHA256 해시로 변환합니다.</p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-        <div className="tool-card" style={{ marginBottom: 0 }}>
+      <div className="tool-grid">
+        <div className="tool-card tool-card-no-margin">
           <div className="card-header">
             <h3>입력</h3>
-            <button className="btn btn-secondary" onClick={clearAll} style={{ padding: '6px 12px', fontSize: '13px' }}>
+            <button className="btn btn-secondary btn-small" onClick={clearAll}>
               초기화
             </button>
           </div>
           <textarea
-            className="input-field"
+            className="input-field textarea-large"
             placeholder="암호화할 텍스트를 입력하세요..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            style={{ minHeight: '300px', resize: 'vertical' }}
           />
         </div>
 
-        <div className="tool-card" style={{ marginBottom: 0 }}>
+        <div className="tool-card tool-card-no-margin">
           <div className="card-header">
             <div className="card-header-left">
               <h3>결과</h3>
@@ -79,17 +78,17 @@ function Sha256Tool() {
               </div>
             </div>
             {output && (
-              <button className="btn btn-secondary" onClick={copyToClipboard} style={{ padding: '6px 12px', fontSize: '13px' }}>
+              <button className="btn btn-secondary btn-small" onClick={copyToClipboard}>
                 {copied ? '✓' : '복사'}
               </button>
             )}
           </div>
           {output ? (
-            <div className="output-area success" style={{ minHeight: '300px', wordBreak: 'break-all' }}>
+            <div className="output-area success output-large">
               {output}
             </div>
           ) : (
-            <div className="output-area" style={{ minHeight: '300px', color: 'var(--text-muted)' }}>
+            <div className="output-area output-large output-placeholder">
               텍스트를 입력하면 해시 결과가 표시됩니다.
             </div>
           )}

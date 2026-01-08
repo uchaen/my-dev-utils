@@ -112,73 +112,70 @@ function JwtEncode() {
   };
 
   return (
-    <div className="tool-container" style={{ maxWidth: '100%' }}>
+    <div className="tool-container tool-container-full">
       <div className="tool-header">
         <h2>JWT Encoder</h2>
         <p>Header, Payload, Secret Key로 JWT를 실시간 생성합니다.</p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', alignItems: 'stretch' }}>
-        <div className="tool-card" style={{ marginBottom: 0, display: 'flex', flexDirection: 'column' }}>
+      <div className="tool-grid">
+        <div className="tool-card tool-card-no-margin tool-card-flex">
           <div className="card-header">
             <h3>입력</h3>
-            <button className="btn btn-secondary" onClick={clearAll} style={{ padding: '6px 12px', fontSize: '13px' }}>초기화</button>
+            <button className="btn btn-secondary btn-small" onClick={clearAll}>초기화</button>
           </div>
           
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1 }}>
+          <div className="flex-column-gap flex-1">
             <div>
-              <label style={{ fontSize: '13px', fontWeight: 500, display: 'block', marginBottom: '6px' }}>Header</label>
+              <label className="input-label">Header</label>
               <textarea
                 ref={headerRef}
-                className="input-field"
+                className="input-field textarea-small"
                 value={header}
                 onChange={(e) => setHeader(e.target.value)}
-                style={{ minHeight: '80px', resize: 'none', overflow: 'hidden' }}
               />
             </div>
-            <div style={{ flex: 1 }}>
-              <label style={{ fontSize: '13px', fontWeight: 500, display: 'block', marginBottom: '6px' }}>Payload</label>
+            <div className="flex-1">
+              <label className="input-label">Payload</label>
               <textarea
                 ref={payloadRef}
-                className="input-field"
+                className="input-field textarea-medium"
                 value={payload}
                 onChange={(e) => setPayload(e.target.value)}
-                style={{ minHeight: '120px', resize: 'none', overflow: 'hidden' }}
               />
             </div>
             <div>
-              <label style={{ fontSize: '13px', fontWeight: 500, display: 'block', marginBottom: '6px' }}>Secret Key</label>
+              <label className="input-label">Secret Key</label>
               <textarea
                 ref={secretRef}
-                className="input-field"
+                className="input-field textarea-small"
                 placeholder="your-256-bit-secret"
                 value={secret}
                 onChange={(e) => setSecret(e.target.value)}
-                style={{ minHeight: '38px', resize: 'none', overflow: 'hidden' }}
               />
             </div>
           </div>
         </div>
 
-        <div className="tool-card" style={{ marginBottom: 0, display: 'flex', flexDirection: 'column' }}>
+        <div className="tool-card tool-card-no-margin tool-card-flex">
           <div className="card-header">
             <h3>결과</h3>
             {output && (
-              <button className="btn btn-secondary" onClick={copyToClipboard} style={{ padding: '6px 12px', fontSize: '13px' }}>
+              <button className="btn btn-secondary btn-small" onClick={copyToClipboard}>
                 {copied ? '✓' : '복사'}
               </button>
             )}
           </div>
           {error ? (
-            <div className="output-area error" style={{ flex: 1, minHeight: '200px' }}>
+            <div className="output-area error flex-1 output-medium">
               {error}
             </div>
           ) : output ? (
-            <div className="output-area success" style={{ flex: 1, minHeight: '200px', wordBreak: 'break-all' }}>
+            <div className="output-area success flex-1 output-medium">
               {output}
             </div>
           ) : (
-            <div className="output-area" style={{ flex: 1, minHeight: '200px', color: 'var(--text-muted)' }}>
+            <div className="output-area flex-1 output-medium output-placeholder">
               Header, Payload, Secret Key를 모두 입력하면 JWT가 생성됩니다.
             </div>
           )}

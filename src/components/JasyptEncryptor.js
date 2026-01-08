@@ -153,21 +153,21 @@ function JasyptEncryptor() {
   };
 
   return (
-    <div className="tool-container" style={{ maxWidth: '100%' }}>
+    <div className="tool-container tool-container-full">
       <div className="tool-header">
         <h2>Jasypt 암호화/복호화</h2>
         <p>Java Jasypt의 PBEWithMD5AndDES 방식으로 텍스트를 실시간 암호화/복호화합니다.</p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-        <div className="tool-card" style={{ marginBottom: 0, display: 'flex', flexDirection: 'column' }}>
+      <div className="tool-grid">
+        <div className="tool-card tool-card-no-margin tool-card-flex">
           <div className="card-header">
             <h3>암호화 입력</h3>
             <button className="btn btn-secondary btn-small" onClick={clearEncrypt}>
               초기화
             </button>
           </div>
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <div className="flex-1 flex-column">
             <label className="input-label">Password</label>
             <input
               type="text"
@@ -186,7 +186,7 @@ function JasyptEncryptor() {
           </div>
         </div>
 
-        <div className="tool-card" style={{ marginBottom: 0, display: 'flex', flexDirection: 'column' }}>
+        <div className="tool-card tool-card-no-margin tool-card-flex">
           <div className="card-header">
             <h3>암호화 결과</h3>
             {encOutput && (
@@ -198,10 +198,10 @@ function JasyptEncryptor() {
               </button>
             )}
           </div>
-          <div style={{ flex: 1 }}>
+          <div className="flex-1">
             <div className={`output-area flex-output ${encOutput ? 'success' : ''}`}>
               {encOutput || (
-                <span style={{ color: 'var(--text-muted)' }}>
+                <span className="output-placeholder">
                   Password와 평문을 입력하면 암호문이 표시됩니다.
                 </span>
               )}
@@ -209,14 +209,14 @@ function JasyptEncryptor() {
           </div>
         </div>
 
-        <div className="tool-card" style={{ marginBottom: 0, display: 'flex', flexDirection: 'column' }}>
+        <div className="tool-card tool-card-no-margin tool-card-flex">
           <div className="card-header">
             <h3>복호화 입력</h3>
             <button className="btn btn-secondary btn-small" onClick={clearDecrypt}>
               초기화
             </button>
           </div>
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <div className="flex-1 flex-column">
             <label className="input-label">Password</label>
             <input
               type="text"
@@ -235,7 +235,7 @@ function JasyptEncryptor() {
           </div>
         </div>
 
-        <div className="tool-card" style={{ marginBottom: 0, display: 'flex', flexDirection: 'column' }}>
+        <div className="tool-card tool-card-no-margin tool-card-flex">
           <div className="card-header">
             <h3>복호화 결과</h3>
             {decOutput && (
@@ -247,7 +247,7 @@ function JasyptEncryptor() {
               </button>
             )}
           </div>
-          <div style={{ flex: 1 }}>
+          <div className="flex-1">
             <div
               className={`output-area flex-output ${
                 decOutput
@@ -258,7 +258,7 @@ function JasyptEncryptor() {
               }`}
             >
               {decOutput || (
-                <span style={{ color: 'var(--text-muted)' }}>
+                <span className="output-placeholder">
                   Password와 암호문을 입력하면 평문이 표시됩니다.
                 </span>
               )}

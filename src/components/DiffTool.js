@@ -262,7 +262,7 @@ function DiffTool() {
   };
 
   return (
-    <div className="tool-container" style={{ maxWidth: '100%' }}>
+    <div className="tool-container tool-container-full">
       <div className="tool-header">
         <h2>Text Diff 비교</h2>
         <p>두 텍스트의 차이점을 문자 단위로 실시간 비교합니다.</p>
@@ -273,15 +273,15 @@ function DiffTool() {
           <div className="card-header">
             <h3>원본</h3>
             <div className="btn-group">
-              <button className="btn btn-secondary" onClick={copyLeft} style={{ padding: '6px 12px', fontSize: '13px' }}>
+              <button className="btn btn-secondary btn-small" onClick={copyLeft}>
                 {copiedKey === 'left' ? '✓' : '복사'}
               </button>
-              <button className="btn btn-secondary" onClick={clearLeft} style={{ padding: '6px 12px', fontSize: '13px' }}>
+              <button className="btn btn-secondary btn-small" onClick={clearLeft}>
                 초기화
               </button>
             </div>
           </div>
-          <div ref={leftEditorRef} className="diff-editor" style={{ minHeight: 200, overflow: 'hidden' }}>
+          <div ref={leftEditorRef} className="diff-editor">
             <div
               ref={leftRef}
               className="diff-input-layer"
@@ -300,15 +300,15 @@ function DiffTool() {
           <div className="card-header">
             <h3>비교</h3>
             <div className="btn-group">
-              <button className="btn btn-secondary" onClick={copyRight} style={{ padding: '6px 12px', fontSize: '13px' }}>
+              <button className="btn btn-secondary btn-small" onClick={copyRight}>
                 {copiedKey === 'right' ? '✓' : '복사'}
               </button>
-              <button className="btn btn-secondary" onClick={clearRight} style={{ padding: '6px 12px', fontSize: '13px' }}>
+              <button className="btn btn-secondary btn-small" onClick={clearRight}>
                 초기화
               </button>
             </div>
           </div>
-          <div ref={rightEditorRef} className="diff-editor" style={{ minHeight: 200, overflow: 'hidden' }}>
+          <div ref={rightEditorRef} className="diff-editor">
             {/* 하이라이트 레이어 */}
             <div className="diff-highlight-layer">
               {diff.map((d, idx) => renderHighlightLine(d, idx))}

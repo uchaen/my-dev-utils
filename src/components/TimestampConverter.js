@@ -97,7 +97,7 @@ function TimestampConverter() {
   const currentFormatted = formatDateTime(new Date(currentTime));
 
   return (
-    <div className="tool-container" style={{ maxWidth: '100%' }}>
+    <div className="tool-container tool-container-full">
       <div className="tool-header">
         <h2>Timestamp 변환기</h2>
         <p>Unix Timestamp와 날짜/시간 간의 실시간 변환을 수행합니다.</p>
@@ -107,39 +107,36 @@ function TimestampConverter() {
         <h3>현재 시간</h3>
         <div className="stats-grid">
           <div className="stat-card">
-            <div className="stat-value" style={{ fontSize: '18px' }}>
+            <div className="stat-value stat-value-medium">
               {Math.floor(currentTime / 1000)}
             </div>
             <div className="stat-label">Unix (초)</div>
             <button 
-              className="btn btn-ghost" 
-              style={{ marginTop: '8px', padding: '4px 8px', fontSize: '12px' }}
+              className="btn btn-ghost btn-ghost-small"
               onClick={() => copyToClipboard(Math.floor(currentTime / 1000), 'sec')}
             >
               {copiedKey === 'sec' ? '✓' : '복사'}
             </button>
           </div>
           <div className="stat-card">
-            <div className="stat-value" style={{ fontSize: '18px' }}>
+            <div className="stat-value stat-value-medium">
               {currentTime}
             </div>
             <div className="stat-label">Unix (밀리초)</div>
             <button 
-              className="btn btn-ghost" 
-              style={{ marginTop: '8px', padding: '4px 8px', fontSize: '12px' }}
+              className="btn btn-ghost btn-ghost-small"
               onClick={() => copyToClipboard(currentTime, 'ms')}
             >
               {copiedKey === 'ms' ? '✓' : '복사'}
             </button>
           </div>
-          <div className="stat-card" style={{ gridColumn: 'span 2' }}>
-            <div className="stat-value" style={{ fontSize: '16px' }}>
+          <div className="stat-card stat-card-span-2">
+            <div className="stat-value stat-value-small">
               {currentFormatted}
             </div>
             <div className="stat-label">KST</div>
             <button 
-              className="btn btn-ghost" 
-              style={{ marginTop: '8px', padding: '4px 8px', fontSize: '12px' }}
+              className="btn btn-ghost btn-ghost-small"
               onClick={() => copyToClipboard(currentFormatted, 'kst')}
             >
               {copiedKey === 'kst' ? '✓' : '복사'}
@@ -148,11 +145,11 @@ function TimestampConverter() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-        <div className="tool-card" style={{ marginBottom: 0 }}>
+      <div className="tool-grid">
+        <div className="tool-card tool-card-no-margin">
           <div className="card-header">
             <h3>Timestamp → 날짜</h3>
-            <button className="btn btn-secondary" onClick={setNow} style={{ padding: '6px 12px', fontSize: '13px' }}>
+            <button className="btn btn-secondary btn-small" onClick={setNow}>
               현재
             </button>
           </div>
@@ -167,14 +164,13 @@ function TimestampConverter() {
           </div>
 
           {timestampResult && !timestampResult.error && (
-            <div className="stat-card" style={{ textAlign: 'center' }}>
-              <div className="stat-value" style={{ fontSize: '16px' }}>
+            <div className="stat-card stat-card-center">
+              <div className="stat-value stat-value-small">
                 {timestampResult.formatted}
               </div>
               <div className="stat-label">KST</div>
               <button 
-                className="btn btn-ghost" 
-                style={{ marginTop: '8px', padding: '4px 8px', fontSize: '12px' }}
+                className="btn btn-ghost btn-ghost-small"
                 onClick={() => copyToClipboard(timestampResult.formatted, 'result-kst')}
               >
                 {copiedKey === 'result-kst' ? '✓' : '복사'}
@@ -189,16 +185,16 @@ function TimestampConverter() {
           )}
 
           {!inputTimestamp && (
-            <div className="output-area" style={{ color: 'var(--text-muted)', minHeight: '100px'}}>
+            <div className="output-area output-placeholder output-small">
               Timestamp를 입력하면 날짜가 표시됩니다.
             </div>
           )}
         </div>
 
-        <div className="tool-card" style={{ marginBottom: 0 }}>
+        <div className="tool-card tool-card-no-margin">
           <div className="card-header">
             <h3>날짜 → Timestamp</h3>
-            <button className="btn btn-secondary" onClick={setNowDate} style={{ padding: '6px 12px', fontSize: '13px' }}>
+            <button className="btn btn-secondary btn-small" onClick={setNowDate}>
               현재
             </button>
           </div>
@@ -215,26 +211,24 @@ function TimestampConverter() {
           {dateResult && !dateResult.error && (
             <div className="stats-grid">
               <div className="stat-card">
-                <div className="stat-value" style={{ fontSize: '16px' }}>
+                <div className="stat-value stat-value-small">
                   {dateResult.seconds}
                 </div>
                 <div className="stat-label">Unix (초)</div>
                 <button 
-                  className="btn btn-ghost" 
-                  style={{ marginTop: '8px', padding: '4px 8px', fontSize: '12px' }}
+                  className="btn btn-ghost btn-ghost-small"
                   onClick={() => copyToClipboard(dateResult.seconds, 'dsec')}
                 >
                   {copiedKey === 'dsec' ? '✓' : '복사'}
                 </button>
               </div>
               <div className="stat-card">
-                <div className="stat-value" style={{ fontSize: '16px' }}>
+                <div className="stat-value stat-value-small">
                   {dateResult.milliseconds}
                 </div>
                 <div className="stat-label">Unix (밀리초)</div>
                 <button 
-                  className="btn btn-ghost" 
-                  style={{ marginTop: '8px', padding: '4px 8px', fontSize: '12px' }}
+                  className="btn btn-ghost btn-ghost-small"
                   onClick={() => copyToClipboard(dateResult.milliseconds, 'dms')}
                 >
                   {copiedKey === 'dms' ? '✓' : '복사'}
@@ -250,7 +244,7 @@ function TimestampConverter() {
           )}
 
           {!inputDateText && (
-            <div className="output-area" style={{ color: 'var(--text-muted)', minHeight: '100px'}}>
+            <div className="output-area output-placeholder output-small">
               날짜를 입력하면 Timestamp가 표시됩니다.
             </div>
           )}

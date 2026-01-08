@@ -71,44 +71,43 @@ function TextSizeCalculator() {
   };
 
   return (
-    <div className="tool-container" style={{ maxWidth: '100%' }}>
+    <div className="tool-container tool-container-full">
       <div className="tool-header">
         <h2>Text Size 계산기</h2>
         <p>텍스트의 바이트, 글자수, 단어수 등을 실시간으로 계산합니다.</p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', alignItems: 'stretch' }}>
-        <div className="tool-card" style={{ marginBottom: 0, display: 'flex', flexDirection: 'column' }}>
+      <div className="tool-grid">
+        <div className="tool-card tool-card-no-margin tool-card-flex">
           <div className="card-header">
             <h3>입력</h3>
             <div className="btn-group">
               {input && (
-                <button className="btn btn-secondary" onClick={copyInput} style={{ padding: '6px 12px', fontSize: '13px' }}>
+                <button className="btn btn-secondary btn-small" onClick={copyInput}>
                   {copiedKey === 'input' ? '✓' : '복사'}
                 </button>
               )}
-              <button className="btn btn-secondary" onClick={() => setInput('')} style={{ padding: '6px 12px', fontSize: '13px' }}>
+              <button className="btn btn-secondary btn-small" onClick={() => setInput('')}>
                 초기화
               </button>
             </div>
           </div>
           <textarea
-            className="input-field"
+            className="input-field textarea-xlarge textarea-flex"
             placeholder="텍스트를 입력하세요..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            style={{ flex: 1, minHeight: '400px', resize: 'vertical' }}
           />
         </div>
 
-        <div className="tool-card" style={{ marginBottom: 0, display: 'flex', flexDirection: 'column' }}>
+        <div className="tool-card tool-card-no-margin tool-card-flex">
           <div className="card-header">
             <h3>결과</h3>
           </div>
           
           {/* 글자 수 */}
-          <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: 500 }}>글자 수</h4>
-          <div className="stats-grid" style={{ marginBottom: '16px' }}>
+          <h4 className="section-title">글자 수</h4>
+          <div className="stats-grid mb-16">
             <div className="stat-card">
               <div className="stat-value">{stats.total.toLocaleString()}</div>
               <div className="stat-label">전체</div>
@@ -128,8 +127,8 @@ function TextSizeCalculator() {
           </div>
 
           {/* 바이트 */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-            <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 500 }}>바이트</h4>
+          <div className="flex-between mb-12">
+            <h4 className="section-title-no-margin">바이트</h4>
             <div className="tabs">
               {[
                 { value: 'utf-8', label: 'UTF-8' },
@@ -146,7 +145,7 @@ function TextSizeCalculator() {
               ))}
             </div>
           </div>
-          <div className="stats-grid" style={{ marginBottom: '16px' }}>
+          <div className="stats-grid mb-16">
             <div className="stat-card">
               <div className="stat-value">{bytes.toLocaleString()}</div>
               <div className="stat-label">Bytes</div>
@@ -162,7 +161,7 @@ function TextSizeCalculator() {
           </div>
 
           {/* 문자 유형 */}
-          <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: 500 }}>문자 유형</h4>
+          <h4 className="section-title">문자 유형</h4>
           <div className="stats-grid">
             <div className="stat-card">
               <div className="stat-value">{stats.korean.toLocaleString()}</div>

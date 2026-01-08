@@ -60,80 +60,79 @@ function JwtDecode() {
   };
 
   return (
-    <div className="tool-container" style={{ maxWidth: '100%' }}>
+    <div className="tool-container tool-container-full">
       <div className="tool-header">
         <h2>JWT Decoder</h2>
         <p>JWT를 실시간으로 디코딩하여 Header와 Payload를 확인합니다.</p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-        <div className="tool-card" style={{ marginBottom: 0 }}>
+      <div className="tool-grid">
+        <div className="tool-card tool-card-no-margin">
           <div className="card-header">
             <h3>입력</h3>
-            <button className="btn btn-secondary" onClick={clearAll} style={{ padding: '6px 12px', fontSize: '13px' }}>
+            <button className="btn btn-secondary btn-small" onClick={clearAll}>
               초기화
             </button>
           </div>
           <textarea
-            className="input-field"
+            className="input-field textarea-xlarge"
             placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
             value={token}
             onChange={(e) => setToken(e.target.value)}
-            style={{ minHeight: '400px', resize: 'vertical' }}
           />
         </div>
 
-        <div className="tool-card" style={{ marginBottom: 0 }}>
+        <div className="tool-card tool-card-no-margin">
           <div className="card-header">
             <h3>결과</h3>
           </div>
           {error ? (
-            <div className="output-area error" style={{ minHeight: '400px' }}>
+            <div className="output-area error output-xlarge">
               {error}
             </div>
           ) : decoded ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div className="flex-column-gap">
               {decoded.isExpired && (
-                <div className="output-area error" style={{ minHeight: 'auto', padding: '8px 12px' }}>
+                <div className="output-area error output-auto">
                   이 토큰은 만료되었습니다.
                 </div>
               )}
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                  <label style={{ fontSize: '13px', fontWeight: 500 }}>Header</label>
-                  <button className="btn btn-ghost" onClick={() => copyToClipboard(JSON.stringify(decoded.header, null, 2), 'header')} style={{ padding: '4px 8px', fontSize: '12px' }}>
+                <div className="flex-between mb-6">
+                  <label className="input-label section-title-no-margin">Header</label>
+                  <button className="btn btn-ghost btn-ghost-small" onClick={() => copyToClipboard(JSON.stringify(decoded.header, null, 2), 'header')}>
                     {copiedKey === 'header' ? '✓' : '복사'}
                   </button>
                 </div>
-                <div className="output-area" style={{ minHeight: 'auto' }}>
+                <div className="output-area output-auto">
                   {JSON.stringify(decoded.header, null, 2)}
                 </div>
               </div>
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                  <label style={{ fontSize: '13px', fontWeight: 500 }}>Payload</label>
-                  <button className="btn btn-ghost" onClick={() => copyToClipboard(JSON.stringify(decoded.payload, null, 2), 'payload')} style={{ padding: '4px 8px', fontSize: '12px' }}>
+                <div className="flex-between mb-6">
+                  <label className="input-label section-title-no-margin">Payload</label>
+                  <button className="btn btn-ghost btn-ghost-small" onClick={() => copyToClipboard(JSON.stringify(decoded.payload, null, 2), 'payload')}>
                     {copiedKey === 'payload' ? '✓' : '복사'}
                   </button>
                 </div>
-                <div className="output-area" style={{ minHeight: 'auto', maxHeight: '200px', overflow: 'auto' }}>
+                <div className="output-area output-auto" style={{ maxHeight: '200px', overflow: 'auto' }}>
                   {JSON.stringify(decoded.payload, null, 2)}
                 </div>
               </div>
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                  <label style={{ fontSize: '13px', fontWeight: 500 }}>Signature</label>
-                  <button className="btn btn-ghost" onClick={() => copyToClipboard(decoded.signature, 'signature')} style={{ padding: '4px 8px', fontSize: '12px' }}>
+                <div className="flex-between mb-6">
+                  <label className="input-label section-title-no-margin">Signature</label>
+                  <button className="btn btn-ghost btn-ghost-small" onClick={() => copyToClipboard(decoded.signature, 'signature')}>
                     {copiedKey === 'signature' ? '✓' : '복사'}
                   </button>
                 </div>
-                <div className="output-area" style={{ minHeight: 'auto', fontSize: '12px', wordBreak: 'break-all' }}>
+                <div className="output-area output-auto" style={{ fontSize: '12px', wordBreak: 'break-all' }}>
                   {decoded.signature}
                 </div>
               </div>
             </div>
           ) : (
-            <div className="output-area" style={{ minHeight: '400px', color: 'var(--text-muted)' }}>
+            <div className="output-area output-xlarge output-placeholder">
               JWT를 입력하면 디코딩 결과가 표시됩니다.
             </div>
           )}
@@ -141,7 +140,7 @@ function JwtDecode() {
       </div>
 
       {decoded && (
-        <div className="tool-card" style={{ marginTop: '16px' }}>
+        <div className="tool-card mt-16">
           <h3>주요 클레임</h3>
           <table className="claims-table">
             <thead>
