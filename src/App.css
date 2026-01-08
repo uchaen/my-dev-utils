@@ -188,6 +188,14 @@
   margin-bottom: 6px;
 }
 
+.input-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 6px;
+  color: var(--text-primary);
+}
+
 .input-field {
   width: 100%;
   padding: 8px 12px;
@@ -198,6 +206,10 @@
   font-size: 14px;
   transition: border-color 0.15s, box-shadow 0.15s;
   box-sizing: border-box;
+}
+
+.input-field-with-margin {
+  margin-bottom: 8px;
 }
 
 .input-field:focus {
@@ -216,6 +228,11 @@ textarea.input-field {
   font-family: 'Geist Mono', monospace;
   font-size: 13px;
   line-height: 1.6;
+}
+
+textarea.input-field.flex-textarea {
+  flex: 1;
+  min-height: 140px;
 }
 
 /* Buttons */
@@ -251,6 +268,11 @@ textarea.input-field {
 
 .btn-secondary:hover {
   background: var(--border-color);
+}
+
+.btn-small {
+  padding: 6px 12px;
+  font-size: 13px;
 }
 
 .btn-ghost {
@@ -313,6 +335,11 @@ textarea.input-field {
   border-color: var(--error);
   background: hsla(0, 84%, 60%, 0.1);
   color: var(--error);
+}
+
+.output-area.flex-output {
+  height: 100%;
+  min-height: 140px;
 }
 
 /* Result Stats */
