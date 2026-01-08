@@ -2,7 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { jwtDecode } from 'jwt-decode';
 
 function JwtDecode() {
-  const [token, setToken] = useState('');
+  const [token, setToken] = useState(() => {
+    const saved = sessionStorage.getItem('jwt-decode-token');
+    return saved || '';
+  });
   const [decoded, setDecoded] = useState(null);
   const [error, setError] = useState('');
   const [copiedKey, setCopiedKey] = useState('');
@@ -41,6 +44,15 @@ function JwtDecode() {
     }
   }, [token]);
 
+  // sessionStorage에 저장
+  useEffect(() => {
+    if (token) {
+      sessionStorage.setItem('jwt-decode-token', token);
+    } else {
+      sessionStorage.removeItem('jwt-decode-token');
+    }
+  }, [token]);
+
   const formatDate = (timestamp) => {
     if (!timestamp) return 'N/A';
     const date = new Date(timestamp * 1000);
@@ -57,6 +69,7 @@ function JwtDecode() {
     setToken('');
     setDecoded(null);
     setError('');
+    sessionStorage.removeItem('jwt-decode-token');
   };
 
   return (

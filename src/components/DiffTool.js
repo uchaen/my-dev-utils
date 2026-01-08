@@ -107,8 +107,14 @@ function computeLineDiff(leftLines, rightLines) {
 }
 
 function DiffTool() {
-  const [left, setLeft] = useState('');
-  const [right, setRight] = useState('');
+  const [left, setLeft] = useState(() => {
+    const saved = sessionStorage.getItem('diff-left');
+    return saved || '';
+  });
+  const [right, setRight] = useState(() => {
+    const saved = sessionStorage.getItem('diff-right');
+    return saved || '';
+  });
   const leftRef = useRef(null);
   const rightRef = useRef(null);
   const leftEditorRef = useRef(null);
@@ -139,7 +145,30 @@ function DiffTool() {
     
     leftEl.style.height = maxHeight + 'px';
     rightEl.style.height = maxHeight + 'px';
+    
+    // highlight layer 높이도 동기화
+    const rightHighlightLayer = rightEl.querySelector('.diff-highlight-layer');
+    if (rightHighlightLayer) {
+      rightHighlightLayer.style.height = maxHeight + 'px';
+    }
   }, [left, right, diff]);
+
+  // sessionStorage에 저장
+  useEffect(() => {
+    if (left) {
+      sessionStorage.setItem('diff-left', left);
+    } else {
+      sessionStorage.removeItem('diff-left');
+    }
+  }, [left]);
+
+  useEffect(() => {
+    if (right) {
+      sessionStorage.setItem('diff-right', right);
+    } else {
+      sessionStorage.removeItem('diff-right');
+    }
+  }, [right]);
 
   const [copiedKey, setCopiedKey] = useState('');
 
@@ -148,6 +177,7 @@ function DiffTool() {
     if (leftRef.current) {
       leftRef.current.innerText = '';
     }
+    sessionStorage.removeItem('diff-left');
   };
 
   const clearRight = () => {
@@ -155,6 +185,7 @@ function DiffTool() {
     if (rightRef.current) {
       rightRef.current.innerText = '';
     }
+    sessionStorage.removeItem('diff-right');
   };
 
   const copyLeft = () => {
@@ -188,17 +219,27 @@ function DiffTool() {
     }
   };
 
-  // left 값이 외부에서 변경되었을 때 (초기화 등)
+  // left 값이 외부에서 변경되었을 때 (초기화, sessionStorage 복원 등)
   useEffect(() => {
-    if (leftRef.current && left === '' && leftRef.current.innerText !== '') {
-      leftRef.current.innerText = '';
+    if (leftRef.current) {
+      if (left === '' && leftRef.current.innerText !== '') {
+        leftRef.current.innerText = '';
+      } else if (left !== '' && leftRef.current.innerText !== left) {
+        // sessionStorage에서 복원된 값 설정
+        leftRef.current.innerText = left;
+      }
     }
   }, [left]);
 
-  // right 값이 외부에서 변경되었을 때 (초기화 등)
+  // right 값이 외부에서 변경되었을 때 (초기화, sessionStorage 복원 등)
   useEffect(() => {
-    if (rightRef.current && right === '' && rightRef.current.innerText !== '') {
-      rightRef.current.innerText = '';
+    if (rightRef.current) {
+      if (right === '' && rightRef.current.innerText !== '') {
+        rightRef.current.innerText = '';
+      } else if (right !== '' && rightRef.current.innerText !== right) {
+        // sessionStorage에서 복원된 값 설정
+        rightRef.current.innerText = right;
+      }
     }
   }, [right]);
 

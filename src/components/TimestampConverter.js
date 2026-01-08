@@ -2,8 +2,14 @@ import React, { useState, useEffect } from 'react';
 
 function TimestampConverter() {
   const [currentTime, setCurrentTime] = useState(Date.now());
-  const [inputTimestamp, setInputTimestamp] = useState('');
-  const [inputDateText, setInputDateText] = useState('');
+  const [inputTimestamp, setInputTimestamp] = useState(() => {
+    const saved = sessionStorage.getItem('timestamp-inputTimestamp');
+    return saved || '';
+  });
+  const [inputDateText, setInputDateText] = useState(() => {
+    const saved = sessionStorage.getItem('timestamp-inputDateText');
+    return saved || '';
+  });
   const [timestampResult, setTimestampResult] = useState(null);
   const [dateResult, setDateResult] = useState(null);
   const [copiedKey, setCopiedKey] = useState('');
@@ -78,6 +84,23 @@ function TimestampConverter() {
       seconds: Math.floor(date.getTime() / 1000),
       milliseconds: date.getTime(),
     });
+  }, [inputDateText]);
+
+  // sessionStorage에 저장
+  useEffect(() => {
+    if (inputTimestamp) {
+      sessionStorage.setItem('timestamp-inputTimestamp', inputTimestamp);
+    } else {
+      sessionStorage.removeItem('timestamp-inputTimestamp');
+    }
+  }, [inputTimestamp]);
+
+  useEffect(() => {
+    if (inputDateText) {
+      sessionStorage.setItem('timestamp-inputDateText', inputDateText);
+    } else {
+      sessionStorage.removeItem('timestamp-inputDateText');
+    }
   }, [inputDateText]);
 
   const copyToClipboard = (text, key) => {

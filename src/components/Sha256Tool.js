@@ -2,9 +2,15 @@ import React, { useState, useEffect } from 'react';
 import CryptoJS from 'crypto-js';
 
 function Sha256Tool() {
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState(() => {
+    const saved = sessionStorage.getItem('sha256-input');
+    return saved || '';
+  });
   const [output, setOutput] = useState('');
-  const [encoding, setEncoding] = useState('hex');
+  const [encoding, setEncoding] = useState(() => {
+    const saved = sessionStorage.getItem('sha256-encoding');
+    return saved || 'hex';
+  });
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -22,6 +28,19 @@ function Sha256Tool() {
     }
   }, [input, encoding]);
 
+  // sessionStorage에 저장
+  useEffect(() => {
+    if (input) {
+      sessionStorage.setItem('sha256-input', input);
+    } else {
+      sessionStorage.removeItem('sha256-input');
+    }
+  }, [input]);
+
+  useEffect(() => {
+    sessionStorage.setItem('sha256-encoding', encoding);
+  }, [encoding]);
+
   const copyToClipboard = () => {
     if (output) {
       navigator.clipboard.writeText(output);
@@ -33,6 +52,7 @@ function Sha256Tool() {
   const clearAll = () => {
     setInput('');
     setOutput('');
+    sessionStorage.removeItem('sha256-input');
   };
 
   return (

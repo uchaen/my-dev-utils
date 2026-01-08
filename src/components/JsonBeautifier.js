@@ -12,13 +12,25 @@ const RAINBOW_COLORS = [
 ];
 
 function JsonBeautifier() {
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState(() => {
+    const saved = sessionStorage.getItem('json-beautifier-input');
+    return saved || '';
+  });
   const [output, setOutput] = useState('');
   const [error, setError] = useState('');
-  const [indentSize, setIndentSize] = useState(2);
-  const [mode, setMode] = useState('beautify');
+  const [indentSize, setIndentSize] = useState(() => {
+    const saved = sessionStorage.getItem('json-beautifier-indentSize');
+    return saved ? parseInt(saved, 10) : 2;
+  });
+  const [mode, setMode] = useState(() => {
+    const saved = sessionStorage.getItem('json-beautifier-mode');
+    return saved || 'beautify';
+  });
   const [copied, setCopied] = useState(false);
-  const [rainbowIndent, setRainbowIndent] = useState(true);
+  const [rainbowIndent, setRainbowIndent] = useState(() => {
+    const saved = sessionStorage.getItem('json-beautifier-rainbowIndent');
+    return saved ? JSON.parse(saved) : true;
+  });
   const inputRef = useRef(null);
   const outputRef = useRef(null);
 
@@ -194,6 +206,27 @@ function JsonBeautifier() {
     syncHeight();
   }, [input, output]);
 
+  // sessionStorage에 저장
+  useEffect(() => {
+    if (input) {
+      sessionStorage.setItem('json-beautifier-input', input);
+    } else {
+      sessionStorage.removeItem('json-beautifier-input');
+    }
+  }, [input]);
+
+  useEffect(() => {
+    sessionStorage.setItem('json-beautifier-indentSize', indentSize.toString());
+  }, [indentSize]);
+
+  useEffect(() => {
+    sessionStorage.setItem('json-beautifier-mode', mode);
+  }, [mode]);
+
+  useEffect(() => {
+    sessionStorage.setItem('json-beautifier-rainbowIndent', JSON.stringify(rainbowIndent));
+  }, [rainbowIndent]);
+
   const copyToClipboard = () => {
     if (output) {
       navigator.clipboard.writeText(output);
@@ -206,6 +239,7 @@ function JsonBeautifier() {
     setInput('');
     setOutput('');
     setError('');
+    sessionStorage.removeItem('json-beautifier-input');
   };
 
   return (

@@ -1,8 +1,14 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 
 function TextSizeCalculator() {
-  const [input, setInput] = useState('');
-  const [encoding, setEncoding] = useState('utf-8');
+  const [input, setInput] = useState(() => {
+    const saved = sessionStorage.getItem('text-size-input');
+    return saved || '';
+  });
+  const [encoding, setEncoding] = useState(() => {
+    const saved = sessionStorage.getItem('text-size-encoding');
+    return saved || 'utf-8';
+  });
   const [copiedKey, setCopiedKey] = useState('');
 
   const calculateBytes = (str, enc) => {
@@ -62,6 +68,19 @@ function TextSizeCalculator() {
     spaces: (input.match(/\s/g) || []).length,
   }), [input]);
 
+  // sessionStorage에 저장
+  useEffect(() => {
+    if (input) {
+      sessionStorage.setItem('text-size-input', input);
+    } else {
+      sessionStorage.removeItem('text-size-input');
+    }
+  }, [input]);
+
+  useEffect(() => {
+    sessionStorage.setItem('text-size-encoding', encoding);
+  }, [encoding]);
+
   const copyInput = () => {
     if (input) {
       navigator.clipboard.writeText(input);
@@ -87,7 +106,10 @@ function TextSizeCalculator() {
                   {copiedKey === 'input' ? '✓' : '복사'}
                 </button>
               )}
-              <button className="btn btn-secondary btn-small" onClick={() => setInput('')}>
+              <button className="btn btn-secondary btn-small" onClick={() => {
+                setInput('');
+                sessionStorage.removeItem('text-size-input');
+              }}>
                 초기화
               </button>
             </div>

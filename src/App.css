@@ -648,7 +648,7 @@ textarea.input-field.textarea-flex {
   font-family: 'Geist Mono', monospace;
   font-size: 13px;
   line-height: 1.6;
-  overflow: visible;
+  overflow: hidden;
   box-sizing: border-box;
   min-height: 200px;
 }
@@ -658,11 +658,14 @@ textarea.input-field.textarea-flex {
   top: 0;
   left: 0;
   right: 0;
+  bottom: 0;
   padding: 8px 12px;
   pointer-events: none;
   white-space: pre-wrap;
   word-break: break-all;
   color: transparent;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .diff-highlight-line {

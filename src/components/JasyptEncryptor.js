@@ -106,13 +106,25 @@ function jasyptDecrypt(encryptedText, password) {
 
 
 function JasyptEncryptor() {
-  const [encPlain, setEncPlain] = useState('');
-  const [encPassword, setEncPassword] = useState('');
+  const [encPlain, setEncPlain] = useState(() => {
+    const saved = sessionStorage.getItem('jasypt-encPlain');
+    return saved || '';
+  });
+  const [encPassword, setEncPassword] = useState(() => {
+    const saved = sessionStorage.getItem('jasypt-encPassword');
+    return saved || '';
+  });
   const [encOutput, setEncOutput] = useState('');
   const [encCopied, setEncCopied] = useState(false);
 
-  const [decCipher, setDecCipher] = useState('');
-  const [decPassword, setDecPassword] = useState('');
+  const [decCipher, setDecCipher] = useState(() => {
+    const saved = sessionStorage.getItem('jasypt-decCipher');
+    return saved || '';
+  });
+  const [decPassword, setDecPassword] = useState(() => {
+    const saved = sessionStorage.getItem('jasypt-decPassword');
+    return saved || '';
+  });
   const [decOutput, setDecOutput] = useState('');
   const [decCopied, setDecCopied] = useState(false);
 
@@ -132,16 +144,53 @@ function JasyptEncryptor() {
     }
   }, [decCipher, decPassword]);
 
+  // sessionStorage에 저장
+  useEffect(() => {
+    if (encPlain) {
+      sessionStorage.setItem('jasypt-encPlain', encPlain);
+    } else {
+      sessionStorage.removeItem('jasypt-encPlain');
+    }
+  }, [encPlain]);
+
+  useEffect(() => {
+    if (encPassword) {
+      sessionStorage.setItem('jasypt-encPassword', encPassword);
+    } else {
+      sessionStorage.removeItem('jasypt-encPassword');
+    }
+  }, [encPassword]);
+
+  useEffect(() => {
+    if (decCipher) {
+      sessionStorage.setItem('jasypt-decCipher', decCipher);
+    } else {
+      sessionStorage.removeItem('jasypt-decCipher');
+    }
+  }, [decCipher]);
+
+  useEffect(() => {
+    if (decPassword) {
+      sessionStorage.setItem('jasypt-decPassword', decPassword);
+    } else {
+      sessionStorage.removeItem('jasypt-decPassword');
+    }
+  }, [decPassword]);
+
   const clearEncrypt = () => {
     setEncPlain('');
     setEncPassword('');
     setEncOutput('');
+    sessionStorage.removeItem('jasypt-encPlain');
+    sessionStorage.removeItem('jasypt-encPassword');
   };
 
   const clearDecrypt = () => {
     setDecCipher('');
     setDecPassword('');
     setDecOutput('');
+    sessionStorage.removeItem('jasypt-decCipher');
+    sessionStorage.removeItem('jasypt-decPassword');
   };
 
   const copyToClipboard = (text, setCopied) => {

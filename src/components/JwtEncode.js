@@ -9,9 +9,18 @@ const defaultPayload = `{
 }`;
 
 function JwtEncode() {
-  const [header, setHeader] = useState('{\n  "alg": "HS256",\n  "typ": "JWT"\n}');
-  const [payload, setPayload] = useState(defaultPayload);
-  const [secret, setSecret] = useState('');
+  const [header, setHeader] = useState(() => {
+    const saved = sessionStorage.getItem('jwt-encode-header');
+    return saved || '{\n  "alg": "HS256",\n  "typ": "JWT"\n}';
+  });
+  const [payload, setPayload] = useState(() => {
+    const saved = sessionStorage.getItem('jwt-encode-payload');
+    return saved || defaultPayload;
+  });
+  const [secret, setSecret] = useState(() => {
+    const saved = sessionStorage.getItem('jwt-encode-secret');
+    return saved || '';
+  });
   const [output, setOutput] = useState('');
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
@@ -44,6 +53,19 @@ function JwtEncode() {
 
   useEffect(() => {
     autoResize(secretRef);
+  }, [secret]);
+
+  // sessionStorage에 저장
+  useEffect(() => {
+    sessionStorage.setItem('jwt-encode-header', header);
+  }, [header]);
+
+  useEffect(() => {
+    sessionStorage.setItem('jwt-encode-payload', payload);
+  }, [payload]);
+
+  useEffect(() => {
+    sessionStorage.setItem('jwt-encode-secret', secret);
   }, [secret]);
 
   useEffect(() => {
@@ -109,6 +131,9 @@ function JwtEncode() {
     setSecret('');
     setOutput('');
     setError('');
+    sessionStorage.removeItem('jwt-encode-header');
+    sessionStorage.removeItem('jwt-encode-payload');
+    sessionStorage.removeItem('jwt-encode-secret');
   };
 
   return (
