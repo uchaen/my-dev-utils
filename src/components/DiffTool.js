@@ -1,110 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
-
-// 간단한 문자 단위 diff 계산 (LCS 기반)
-function computeCharDiff(oldStr, newStr) {
-  if (oldStr === newStr) return [{ type: 'same', text: newStr }];
-  if (!oldStr) return [{ type: 'added', text: newStr }];
-  if (!newStr) return [{ type: 'removed', text: oldStr }];
-
-  const m = oldStr.length;
-  const n = newStr.length;
-  
-  const dp = Array(m + 1).fill(null).map(() => Array(n + 1).fill(0));
-  
-  for (let i = 1; i <= m; i++) {
-    for (let j = 1; j <= n; j++) {
-      if (oldStr[i - 1] === newStr[j - 1]) {
-        dp[i][j] = dp[i - 1][j - 1] + 1;
-      } else {
-        dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
-      }
-    }
-  }
-
-  const result = [];
-  let i = m, j = n;
-  
-  while (i > 0 || j > 0) {
-    if (i > 0 && j > 0 && oldStr[i - 1] === newStr[j - 1]) {
-      result.unshift({ type: 'same', text: oldStr[i - 1] });
-      i--;
-      j--;
-    } else if (j > 0 && (i === 0 || dp[i][j - 1] >= dp[i - 1][j])) {
-      result.unshift({ type: 'added', text: newStr[j - 1] });
-      j--;
-    } else {
-      result.unshift({ type: 'removed', text: oldStr[i - 1] });
-      i--;
-    }
-  }
-
-  // 연속된 같은 타입 병합
-  const merged = [];
-  for (const item of result) {
-    if (merged.length > 0 && merged[merged.length - 1].type === item.type) {
-      merged[merged.length - 1].text += item.text;
-    } else {
-      merged.push({ ...item });
-    }
-  }
-
-  return merged;
-}
-
-// 줄 단위 LCS diff 계산
-function computeLineDiff(leftLines, rightLines) {
-  const m = leftLines.length;
-  const n = rightLines.length;
-  
-  // LCS 테이블 생성
-  const dp = Array(m + 1).fill(null).map(() => Array(n + 1).fill(0));
-  
-  for (let i = 1; i <= m; i++) {
-    for (let j = 1; j <= n; j++) {
-      if (leftLines[i - 1] === rightLines[j - 1]) {
-        dp[i][j] = dp[i - 1][j - 1] + 1;
-      } else {
-        dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
-      }
-    }
-  }
-
-  // 역추적하여 diff 생성
-  const result = [];
-  let i = m, j = n;
-  
-  while (i > 0 || j > 0) {
-    if (i > 0 && j > 0 && leftLines[i - 1] === rightLines[j - 1]) {
-      result.unshift({ type: 'same', left: leftLines[i - 1], right: rightLines[j - 1], charDiff: null });
-      i--;
-      j--;
-    } else if (j > 0 && (i === 0 || dp[i][j - 1] >= dp[i - 1][j])) {
-      result.unshift({ type: 'added', left: '', right: rightLines[j - 1], charDiff: null });
-      j--;
-    } else {
-      result.unshift({ type: 'removed', left: leftLines[i - 1], right: '', charDiff: null });
-      i--;
-    }
-  }
-
-  // 인접한 removed + added를 modified로 병합
-  const merged = [];
-  for (let k = 0; k < result.length; k++) {
-    const curr = result[k];
-    const next = result[k + 1];
-    
-    if (curr.type === 'removed' && next && next.type === 'added') {
-      // 문자 단위 diff 계산
-      const charDiff = computeCharDiff(curr.left, next.right);
-      merged.push({ type: 'modified', left: curr.left, right: next.right, charDiff });
-      k++; // next 건너뛰기
-    } else {
-      merged.push(curr);
-    }
-  }
-
-  return merged;
-}
+import React, { useState, useMemo, useRef, useEffect, useLayoutEffect } from 'react';
 
 function DiffTool() {
   const [left, setLeft] = useState(() => {
@@ -120,13 +14,79 @@ function DiffTool() {
   const leftEditorRef = useRef(null);
   const rightEditorRef = useRef(null);
 
-  const diff = useMemo(() => {
-    const leftLines = left.split('\n');
-    const rightLines = right.split('\n');
-    return computeLineDiff(leftLines, rightLines);
-  }, [left, right]);
+  // 각 줄을 배열로 분리하고, 같은 index의 줄이 다른지 확인
+  // 빈 문자열인 경우 빈 배열이 되므로, 최소 하나의 빈 줄은 표시
+  const leftLines = useMemo(() => {
+    const lines = left.split('\n');
+    return lines.length === 0 ? [''] : lines;
+  }, [left]);
+  const rightLines = useMemo(() => {
+    const lines = right.split('\n');
+    return lines.length === 0 ? [''] : lines;
+  }, [right]);
+  
+  // 같은 index의 줄이 다른지 확인
+  const lineDiffFlags = useMemo(() => {
+    const maxLen = Math.max(leftLines.length, rightLines.length);
+    const flags = [];
+    for (let i = 0; i < maxLen; i++) {
+      const leftLine = i < leftLines.length ? leftLines[i] : '';
+      const rightLine = i < rightLines.length ? rightLines[i] : '';
+      flags.push(leftLine !== rightLine);
+    }
+    return flags;
+  }, [leftLines, rightLines]);
 
-  // 양쪽 높이 동기화 (둘 다 div)
+  // 오른쪽 렌더링용 줄 배열 (왼쪽과 같은 길이로 확장)
+  const displayRightLines = useMemo(() => {
+    const maxLen = Math.max(leftLines.length, rightLines.length);
+    const displayLines = [...rightLines];
+    while (displayLines.length < maxLen) {
+      displayLines.push('');
+    }
+    return displayLines;
+  }, [leftLines, rightLines]);
+
+  // DOM과 상태 동기화 (포커스가 있는 요소는 제외, 초기 렌더링 포함)
+  useLayoutEffect(() => {
+    if (leftRef.current) {
+      const lineDivs = Array.from(leftRef.current.querySelectorAll('.diff-line'));
+      const activeElement = document.activeElement;
+      const maxLen = Math.min(lineDivs.length, leftLines.length);
+      
+      for (let idx = 0; idx < maxLen; idx++) {
+        const div = lineDivs[idx];
+        if (div && div !== activeElement) {
+          const currentText = (div.textContent || '').replace(/\n/g, '');
+          const targetText = leftLines[idx] || '';
+          if (currentText !== targetText) {
+            div.textContent = targetText;
+          }
+        }
+      }
+    }
+  }, [leftLines]);
+
+  useLayoutEffect(() => {
+    if (rightRef.current) {
+      const lineDivs = Array.from(rightRef.current.querySelectorAll('.diff-line'));
+      const activeElement = document.activeElement;
+      const maxLen = Math.min(lineDivs.length, displayRightLines.length);
+      
+      for (let idx = 0; idx < maxLen; idx++) {
+        const div = lineDivs[idx];
+        if (div && div !== activeElement) {
+          const currentText = (div.textContent || '').replace(/\n/g, '');
+          const targetText = idx < rightLines.length ? rightLines[idx] : '';
+          if (currentText !== targetText) {
+            div.textContent = targetText;
+          }
+        }
+      }
+    }
+  }, [rightLines, displayRightLines]);
+
+  // 양쪽 높이 동기화 (둘 다 div) - 세로 스크롤 없이 콘텐츠에 맞춰 높이 조절
   useEffect(() => {
     const leftEl = leftEditorRef.current;
     const rightEl = rightEditorRef.current;
@@ -140,18 +100,13 @@ function DiffTool() {
     const leftHeight = leftEl.scrollHeight;
     const rightHeight = rightEl.scrollHeight;
     
-    // 둘 중 큰 값으로 통일
+    // 둘 중 큰 값으로 통일하되, 최소 높이는 200px
     const maxHeight = Math.max(200, leftHeight, rightHeight);
     
+    // 높이를 설정하되, 스크롤 없이 콘텐츠가 보이도록
     leftEl.style.height = maxHeight + 'px';
     rightEl.style.height = maxHeight + 'px';
-    
-    // highlight layer 높이도 동기화
-    const rightHighlightLayer = rightEl.querySelector('.diff-highlight-layer');
-    if (rightHighlightLayer) {
-      rightHighlightLayer.style.height = maxHeight + 'px';
-    }
-  }, [left, right, diff]);
+  }, [left, right, leftLines, rightLines]);
 
   // sessionStorage에 저장
   useEffect(() => {
@@ -174,17 +129,11 @@ function DiffTool() {
 
   const clearLeft = () => {
     setLeft('');
-    if (leftRef.current) {
-      leftRef.current.innerText = '';
-    }
     sessionStorage.removeItem('diff-left');
   };
 
   const clearRight = () => {
     setRight('');
-    if (rightRef.current) {
-      rightRef.current.innerText = '';
-    }
     sessionStorage.removeItem('diff-right');
   };
 
@@ -204,109 +153,549 @@ function DiffTool() {
     }
   };
 
-  // contentEditable에서 텍스트 추출
-  const handleLeftInput = () => {
-    if (leftRef.current) {
-      const text = leftRef.current.innerText;
-      setLeft(text);
+  // 각 줄 div의 텍스트 변경 핸들러
+  const handleLineInput = (index, side, e) => {
+    const target = e.currentTarget;
+    // textContent를 사용하여 더 정확하게 텍스트를 읽음
+    const newText = (target.textContent || '').replace(/\n/g, '');
+    
+    if (side === 'left') {
+      const newLines = [...leftLines];
+      // index가 범위를 벗어나면 배열을 확장
+      while (newLines.length <= index) {
+        newLines.push('');
+      }
+      newLines[index] = newText;
+      setLeft(newLines.join('\n'));
+    } else if (side === 'right') {
+      const newLines = [...rightLines];
+      // index가 범위를 벗어나면 배열을 확장
+      while (newLines.length <= index) {
+        newLines.push('');
+      }
+      newLines[index] = newText;
+      setRight(newLines.join('\n'));
     }
   };
 
-  const handleRightInput = () => {
-    if (rightRef.current) {
-      const text = rightRef.current.innerText;
-      setRight(text);
+  // 줄 추가 핸들러
+  const handleLineKeyDown = (e, index, side) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const target = e.currentTarget;
+      const selection = window.getSelection();
+      let cursorOffset = 0;
+      
+      if (selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        const textNode = range.startContainer;
+        if (textNode.nodeType === Node.TEXT_NODE) {
+          cursorOffset = range.startOffset;
+        } else {
+          // textNode가 아닌 경우 (div 등)
+          const textContent = target.textContent || '';
+          cursorOffset = textContent.length;
+        }
+      }
+      
+      const currentText = target.textContent || '';
+      const isAtEnd = cursorOffset >= currentText.length;
+      
+      if (side === 'left') {
+        const newLines = [...leftLines];
+        // index가 범위를 벗어나면 배열을 확장
+        while (newLines.length <= index) {
+          newLines.push('');
+        }
+        
+        if (isAtEnd) {
+          // 커서가 끝에 있으면 빈 줄 추가
+          newLines.splice(index + 1, 0, '');
+        } else {
+          // 커서 오른쪽 내용을 다음 줄로 이동
+          const beforeCursor = currentText.substring(0, cursorOffset);
+          const afterCursor = currentText.substring(cursorOffset);
+          newLines[index] = beforeCursor;
+          newLines.splice(index + 1, 0, afterCursor);
+        }
+        setLeft(newLines.join('\n'));
+      } else {
+        // 오른쪽의 경우, 실제 rightLines를 기준으로 처리
+        const newLines = [...rightLines];
+        
+        if (index < rightLines.length) {
+          if (isAtEnd) {
+            // 커서가 끝에 있으면 빈 줄 추가
+            newLines.splice(index + 1, 0, '');
+          } else {
+            // 커서 오른쪽 내용을 다음 줄로 이동
+            const beforeCursor = currentText.substring(0, cursorOffset);
+            const afterCursor = currentText.substring(cursorOffset);
+            newLines[index] = beforeCursor;
+            newLines.splice(index + 1, 0, afterCursor);
+          }
+        } else {
+          // 빈 줄 영역이면 마지막에 추가
+          newLines.push('');
+        }
+        setRight(newLines.join('\n'));
+      }
+      
+      // DOM 직접 업데이트 (현재 줄도 업데이트)
+      setTimeout(() => {
+        const editorRef = side === 'left' ? leftRef.current : rightRef.current;
+        if (editorRef) {
+          const lineDivs = editorRef.querySelectorAll('.diff-line');
+          
+          // 현재 줄 DOM 업데이트 (커서가 중간일 때 오른쪽 내용 제거)
+          if (!isAtEnd && lineDivs[index]) {
+            const beforeCursor = currentText.substring(0, cursorOffset);
+            lineDivs[index].textContent = beforeCursor;
+          }
+          
+          // 다음 줄로 포커스 이동
+          const nextLineIndex = index + 1;
+          if (lineDivs[nextLineIndex]) {
+            lineDivs[nextLineIndex].focus();
+            if (!isAtEnd) {
+              // 새 줄의 시작 위치로 커서 이동
+              const range = document.createRange();
+              const sel = window.getSelection();
+              range.setStart(lineDivs[nextLineIndex], 0);
+              range.collapse(true);
+              sel.removeAllRanges();
+              sel.addRange(range);
+            }
+          }
+        }
+      }, 0);
+    } else if (e.key === 'Backspace') {
+      const target = e.currentTarget;
+      const selection = window.getSelection();
+      let cursorOffset = 0;
+      
+      if (selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        const textNode = range.startContainer;
+        if (textNode.nodeType === Node.TEXT_NODE) {
+          cursorOffset = range.startOffset;
+        }
+      }
+      
+      const isAtStart = cursorOffset === 0;
+      const lineDivs = side === 'left' 
+        ? leftRef.current?.querySelectorAll('.diff-line')
+        : rightRef.current?.querySelectorAll('.diff-line');
+      
+      // 커서가 가장 왼쪽에 있고, 위에 줄이 있으면 현재 줄을 위 줄의 오른쪽에 붙임
+      if (isAtStart && index > 0 && lineDivs && lineDivs[index]) {
+        e.preventDefault();
+        const currentLines = side === 'left' ? [...leftLines] : [...rightLines];
+        const newLines = currentLines.length > 0 ? [...currentLines] : [''];
+        
+        // 인덱스 범위 검증
+        if (index > 0 && index < newLines.length) {
+          // DOM에서 최신 텍스트를 읽음 (상태보다 최신일 수 있음)
+          const currentLineText = (target.textContent || '').replace(/\n/g, '');
+          const prevLineText = newLines[index - 1] || '';
+          const mergedText = prevLineText + currentLineText;
+          newLines[index - 1] = mergedText;
+          newLines.splice(index, 1);
+          
+          if (side === 'left') {
+            setLeft(newLines.join('\n'));
+          } else {
+            setRight(newLines.join('\n'));
+          }
+          
+          // DOM 직접 업데이트 (줄이 삭제되므로 인덱스 시프트 고려)
+          setTimeout(() => {
+            const updatedLineDivs = side === 'left' 
+              ? leftRef.current?.querySelectorAll('.diff-line')
+              : rightRef.current?.querySelectorAll('.diff-line');
+            
+            if (updatedLineDivs && index > 0) {
+              // 위 줄 업데이트 (합쳐진 텍스트)
+              if (updatedLineDivs[index - 1]) {
+                updatedLineDivs[index - 1].textContent = mergedText;
+              }
+              
+              // 삭제된 줄(index) 이후의 모든 줄들을 하나씩 앞으로 시프트
+              // newLines는 이미 index가 삭제된 상태이므로:
+              // - newLines[index-1] = mergedText (이미 위에서 업데이트)
+              // - newLines[index] = 원래 newLines[index+1]
+              // - newLines[index+1] = 원래 newLines[index+2]
+              // DOM의 index부터 시작해서 newLines의 index부터 매칭
+              for (let domIdx = index; domIdx < updatedLineDivs.length; domIdx++) {
+                const stateIdx = domIdx; // DOM의 index부터 newLines의 index부터 매칭
+                if (stateIdx < newLines.length && updatedLineDivs[domIdx]) {
+                  const targetText = newLines[stateIdx] || '';
+                  if (updatedLineDivs[domIdx].textContent !== targetText) {
+                    updatedLineDivs[domIdx].textContent = targetText;
+                  }
+                }
+              }
+              
+              // 이전 줄로 포커스 이동 (이전 줄의 끝 위치, 즉 합쳐진 위치)
+              if (updatedLineDivs[index - 1]) {
+                updatedLineDivs[index - 1].focus();
+                // 텍스트 노드를 찾거나 생성
+                let textNode = updatedLineDivs[index - 1].firstChild;
+                if (!textNode || textNode.nodeType !== Node.TEXT_NODE) {
+                  // 텍스트 노드가 없으면 생성
+                  textNode = document.createTextNode('');
+                  updatedLineDivs[index - 1].appendChild(textNode);
+                }
+                // prevLineText의 길이 위치에 커서 설정
+                const cursorPosition = Math.min(prevLineText.length, mergedText.length);
+                const range = document.createRange();
+                range.setStart(textNode, cursorPosition);
+                range.collapse(true);
+                const sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(range);
+              }
+            }
+          }, 0);
+        }
+      } else if (lineDivs && lineDivs[index] && lineDivs[index].textContent === '' && index > 0) {
+        // 빈 줄 삭제 (기존 로직)
+        e.preventDefault();
+        const currentLines = side === 'left' ? [...leftLines] : [...rightLines];
+        const newLines = currentLines.length > 0 ? [...currentLines] : [''];
+        
+        if (index < newLines.length) {
+          newLines.splice(index, 1);
+          if (side === 'left') {
+            setLeft(newLines.join('\n'));
+          } else {
+            setRight(newLines.join('\n'));
+          }
+        }
+        
+        // 이전 줄로 포커스 이동
+        setTimeout(() => {
+          if (lineDivs[index - 1]) {
+            lineDivs[index - 1].focus();
+            const range = document.createRange();
+            range.selectNodeContents(lineDivs[index - 1]);
+            range.collapse(false);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+          }
+        }, 0);
+      }
+    } else if (e.key === 'Delete') {
+      const target = e.currentTarget;
+      const selection = window.getSelection();
+      let cursorOffset = 0;
+      
+      if (selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        const textNode = range.startContainer;
+        if (textNode.nodeType === Node.TEXT_NODE) {
+          cursorOffset = range.startOffset;
+        }
+      }
+      
+      const currentText = target.textContent || '';
+      const isAtEnd = cursorOffset >= currentText.length;
+      const lineDivs = side === 'left' 
+        ? leftRef.current?.querySelectorAll('.diff-line')
+        : rightRef.current?.querySelectorAll('.diff-line');
+      
+      // 커서가 가장 오른쪽에 있고, 아래에 줄이 있으면 아랫줄을 현재 줄의 오른쪽에 붙임
+      if (isAtEnd && lineDivs && lineDivs[index]) {
+        if (side === 'left') {
+          // 인덱스 범위 검증
+          if (index >= 0 && index < leftLines.length - 1) {
+            e.preventDefault();
+            const newLines = [...leftLines];
+            const nextLineText = newLines[index + 1] || '';
+            const currentLineText = newLines[index] || '';
+            const mergedText = currentLineText + nextLineText;
+            const currentLineLength = currentLineText.length; // 합쳐지기 전 현재 줄의 길이
+            newLines[index] = mergedText;
+            newLines.splice(index + 1, 1);
+            setLeft(newLines.join('\n'));
+            
+            // DOM 직접 업데이트 (줄이 삭제되므로 인덱스 시프트 고려)
+            setTimeout(() => {
+              const updatedLineDivs = leftRef.current?.querySelectorAll('.diff-line');
+              if (updatedLineDivs && index >= 0) {
+                // 현재 줄 업데이트 (합쳐진 텍스트)
+                if (updatedLineDivs[index]) {
+                  updatedLineDivs[index].textContent = mergedText;
+                }
+                
+                // 삭제된 줄(index+1) 이후의 모든 줄들을 하나씩 앞으로 시프트
+                // newLines는 이미 index+1이 삭제된 상태이므로, DOM의 index+1부터 newLines의 index+1부터 매칭
+                for (let domIdx = index + 1; domIdx < updatedLineDivs.length; domIdx++) {
+                  const stateIdx = domIdx; // DOM의 index+1부터 newLines의 index+1부터 매칭
+                  if (stateIdx < newLines.length && updatedLineDivs[domIdx]) {
+                    const targetText = newLines[stateIdx] || '';
+                    if (updatedLineDivs[domIdx].textContent !== targetText) {
+                      updatedLineDivs[domIdx].textContent = targetText;
+                    }
+                  }
+                }
+                
+                // 현재 줄로 포커스 유지 (현재 줄의 끝 위치, 즉 합쳐진 위치)
+                if (updatedLineDivs[index]) {
+                  updatedLineDivs[index].focus();
+                  // 텍스트 노드를 찾거나 생성
+                  let textNode = updatedLineDivs[index].firstChild;
+                  if (!textNode || textNode.nodeType !== Node.TEXT_NODE) {
+                    // 텍스트 노드가 없으면 생성
+                    textNode = document.createTextNode('');
+                    updatedLineDivs[index].appendChild(textNode);
+                  }
+                  // currentLineLength 위치에 커서 설정
+                  const cursorPosition = Math.min(currentLineLength, mergedText.length);
+                  const range = document.createRange();
+                  range.setStart(textNode, cursorPosition);
+                  range.collapse(true);
+                  const sel = window.getSelection();
+                  sel.removeAllRanges();
+                  sel.addRange(range);
+                }
+              }
+            }, 0);
+          }
+        } else {
+          // 오른쪽의 경우, rightLines 기준으로 처리
+          // 인덱스 범위 검증
+          if (index >= 0 && index < rightLines.length - 1) {
+            e.preventDefault();
+            const newLines = [...rightLines];
+            const nextLineText = newLines[index + 1] || '';
+            const currentLineText = newLines[index] || '';
+            const mergedText = currentLineText + nextLineText;
+            const currentLineLength = currentLineText.length; // 합쳐지기 전 현재 줄의 길이
+            newLines[index] = mergedText;
+            newLines.splice(index + 1, 1);
+            setRight(newLines.join('\n'));
+            
+            // DOM 직접 업데이트 (줄이 삭제되므로 인덱스 시프트 고려)
+            setTimeout(() => {
+              const updatedLineDivs = rightRef.current?.querySelectorAll('.diff-line');
+              if (updatedLineDivs && index >= 0) {
+                // 현재 줄 업데이트 (합쳐진 텍스트)
+                if (updatedLineDivs[index]) {
+                  updatedLineDivs[index].textContent = mergedText;
+                }
+                
+                // 삭제된 줄(index+1) 이후의 모든 줄들을 하나씩 앞으로 시프트
+                // newLines는 이미 index+1이 삭제된 상태이므로, DOM의 index+1부터 newLines의 index+1부터 매칭
+                for (let domIdx = index + 1; domIdx < updatedLineDivs.length; domIdx++) {
+                  const stateIdx = domIdx; // DOM의 index+1부터 newLines의 index+1부터 매칭
+                  if (stateIdx < newLines.length && updatedLineDivs[domIdx]) {
+                    const targetText = newLines[stateIdx] || '';
+                    if (updatedLineDivs[domIdx].textContent !== targetText) {
+                      updatedLineDivs[domIdx].textContent = targetText;
+                    }
+                  }
+                }
+                
+                // 현재 줄로 포커스 유지 (현재 줄의 끝 위치, 즉 합쳐진 위치)
+                if (updatedLineDivs[index]) {
+                  updatedLineDivs[index].focus();
+                  // 텍스트 노드를 찾거나 생성
+                  let textNode = updatedLineDivs[index].firstChild;
+                  if (!textNode || textNode.nodeType !== Node.TEXT_NODE) {
+                    // 텍스트 노드가 없으면 생성
+                    textNode = document.createTextNode('');
+                    updatedLineDivs[index].appendChild(textNode);
+                  }
+                  // currentLineLength 위치에 커서 설정
+                  const cursorPosition = Math.min(currentLineLength, mergedText.length);
+                  const range = document.createRange();
+                  range.setStart(textNode, cursorPosition);
+                  range.collapse(true);
+                  const sel = window.getSelection();
+                  sel.removeAllRanges();
+                  sel.addRange(range);
+                }
+              }
+            }, 0);
+          }
+        }
+      }
+    } else if (e.key === 'Tab') {
+      e.preventDefault();
+      const selection = window.getSelection();
+      if (selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        range.deleteContents();
+        range.insertNode(document.createTextNode('  '));
+        range.collapse(false);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        handleLineInput(index, side);
+      }
+    } else if (e.key === 'ArrowUp') {
+      const target = e.currentTarget;
+      const lineDivs = side === 'left' 
+        ? leftRef.current?.querySelectorAll('.diff-line')
+        : rightRef.current?.querySelectorAll('.diff-line');
+      
+      if (index > 0 && lineDivs && lineDivs[index - 1]) {
+        e.preventDefault();
+        const selection = window.getSelection();
+        let cursorOffset = 0;
+        
+        if (selection.rangeCount > 0) {
+          const range = selection.getRangeAt(0);
+          const textNode = range.startContainer;
+          if (textNode.nodeType === Node.TEXT_NODE) {
+            cursorOffset = range.startOffset;
+          } else {
+            const textContent = target.textContent || '';
+            cursorOffset = textContent.length;
+          }
+        }
+        
+        // 위 줄로 포커스 이동
+        const prevLine = lineDivs[index - 1];
+        prevLine.focus();
+        
+        // 커서 위치 설정 (위 줄의 길이를 고려)
+        const prevLineText = prevLine.textContent || '';
+        const targetCursorOffset = Math.min(cursorOffset, prevLineText.length);
+        
+        setTimeout(() => {
+          let textNode = prevLine.firstChild;
+          if (!textNode || textNode.nodeType !== Node.TEXT_NODE) {
+            textNode = document.createTextNode('');
+            prevLine.appendChild(textNode);
+          }
+          const range = document.createRange();
+          range.setStart(textNode, targetCursorOffset);
+          range.collapse(true);
+          const sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(range);
+        }, 0);
+      }
+    } else if (e.key === 'ArrowDown') {
+      const target = e.currentTarget;
+      const lineDivs = side === 'left' 
+        ? leftRef.current?.querySelectorAll('.diff-line')
+        : rightRef.current?.querySelectorAll('.diff-line');
+      
+      if (lineDivs && index < lineDivs.length - 1 && lineDivs[index + 1]) {
+        e.preventDefault();
+        const selection = window.getSelection();
+        let cursorOffset = 0;
+        
+        if (selection.rangeCount > 0) {
+          const range = selection.getRangeAt(0);
+          const textNode = range.startContainer;
+          if (textNode.nodeType === Node.TEXT_NODE) {
+            cursorOffset = range.startOffset;
+          } else {
+            const textContent = target.textContent || '';
+            cursorOffset = textContent.length;
+          }
+        }
+        
+        // 아래 줄로 포커스 이동
+        const nextLine = lineDivs[index + 1];
+        nextLine.focus();
+        
+        // 커서 위치 설정 (아래 줄의 길이를 고려)
+        const nextLineText = nextLine.textContent || '';
+        const targetCursorOffset = Math.min(cursorOffset, nextLineText.length);
+        
+        setTimeout(() => {
+          let textNode = nextLine.firstChild;
+          if (!textNode || textNode.nodeType !== Node.TEXT_NODE) {
+            textNode = document.createTextNode('');
+            nextLine.appendChild(textNode);
+          }
+          const range = document.createRange();
+          range.setStart(textNode, targetCursorOffset);
+          range.collapse(true);
+          const sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(range);
+        }, 0);
+      }
     }
   };
 
-  // left 값이 외부에서 변경되었을 때 (초기화, sessionStorage 복원 등)
-  useEffect(() => {
-    if (leftRef.current) {
-      if (left === '' && leftRef.current.innerText !== '') {
-        leftRef.current.innerText = '';
-      } else if (left !== '' && leftRef.current.innerText !== left) {
-        // sessionStorage에서 복원된 값 설정
-        leftRef.current.innerText = left;
-      }
-    }
-  }, [left]);
-
-  // right 값이 외부에서 변경되었을 때 (초기화, sessionStorage 복원 등)
-  useEffect(() => {
-    if (rightRef.current) {
-      if (right === '' && rightRef.current.innerText !== '') {
-        rightRef.current.innerText = '';
-      } else if (right !== '' && rightRef.current.innerText !== right) {
-        // sessionStorage에서 복원된 값 설정
-        rightRef.current.innerText = right;
-      }
-    }
-  }, [right]);
-
-  const handlePaste = (e) => {
+  const handlePaste = (e, index, side) => {
     e.preventDefault();
     const text = e.clipboardData.getData('text/plain');
-    document.execCommand('insertText', false, text);
+    const pastedLines = text.split('\n');
+    
+    const currentLines = side === 'left' ? [...leftLines] : [...rightLines];
+    const newLines = currentLines.length > 0 ? [...currentLines] : [''];
+    
+    // index가 범위를 벗어나면 배열을 확장
+    while (newLines.length <= index) {
+      newLines.push('');
+    }
+    
+    const currentLine = newLines[index] || '';
+    
+    // 현재 줄의 커서 위치에 삽입 (간단하게 줄 끝에 추가)
+    newLines[index] = currentLine + pastedLines[0];
+    
+    // 여러 줄인 경우 나머지 줄 삽입
+    if (pastedLines.length > 1) {
+      newLines.splice(index + 1, 0, ...pastedLines.slice(1));
+    }
+    
+    const newText = newLines.join('\n');
+    
+    if (side === 'left') {
+      setLeft(newText);
+      // DOM 직접 업데이트 (포커스가 있는 요소도 업데이트)
+      setTimeout(() => {
+        if (leftRef.current) {
+          const lineDivs = Array.from(leftRef.current.querySelectorAll('.diff-line'));
+          if (lineDivs[index]) {
+            const newLinesArray = newText.split('\n');
+            const maxLen = Math.min(lineDivs.length, newLinesArray.length);
+            for (let idx = 0; idx < maxLen; idx++) {
+              if (lineDivs[idx] && lineDivs[idx].innerText !== newLinesArray[idx]) {
+                lineDivs[idx].innerText = newLinesArray[idx] || '';
+              }
+            }
+          }
+        }
+      }, 0);
+    } else {
+      setRight(newText);
+      // DOM 직접 업데이트 (포커스가 있는 요소도 업데이트)
+      setTimeout(() => {
+        if (rightRef.current) {
+          const lineDivs = Array.from(rightRef.current.querySelectorAll('.diff-line'));
+          if (lineDivs[index]) {
+            const newLinesArray = newText.split('\n');
+            const maxLen = Math.min(lineDivs.length, newLinesArray.length);
+            for (let idx = 0; idx < maxLen; idx++) {
+              if (lineDivs[idx] && lineDivs[idx].innerText !== newLinesArray[idx]) {
+                lineDivs[idx].innerText = newLinesArray[idx] || '';
+              }
+            }
+          }
+        }
+      }, 0);
+    }
   };
 
   const handleDrop = (e) => {
     e.preventDefault();
   };
 
-  const handleKeyDown = (e) => {
-    if (e.key === 'Tab') {
-      e.preventDefault();
-      document.execCommand('insertText', false, '  ');
-    }
-  };
-
-  const renderHighlightLine = (d, idx) => {
-    if (d.type === 'same') {
-      return <div key={idx} className="diff-highlight-line">{d.right || '\u00A0'}</div>;
-    }
-    
-    if (d.type === 'added') {
-      return (
-        <div key={idx} className="diff-highlight-line diff-line-added">
-          {d.right || '\u00A0'}
-        </div>
-      );
-    }
-    
-    if (d.type === 'removed') {
-      return (
-        <div key={idx} className="diff-highlight-line diff-line-removed">
-          <span className="diff-removed-text">{d.left}</span>
-        </div>
-      );
-    }
-    
-    // modified - 문자 단위로 하이라이트
-    if (d.charDiff) {
-      return (
-        <div key={idx} className="diff-highlight-line diff-line-modified">
-          {d.charDiff.map((part, partIdx) => {
-            if (part.type === 'same') {
-              return <span key={partIdx}>{part.text}</span>;
-            } else if (part.type === 'added') {
-              return <span key={partIdx} className="diff-char-added">{part.text}</span>;
-            } else if (part.type === 'removed') {
-              return <span key={partIdx} className="diff-char-removed">{part.text}</span>;
-            }
-            return null;
-          })}
-        </div>
-      );
-    }
-    
-    return <div key={idx} className="diff-highlight-line">{d.right || '\u00A0'}</div>;
-  };
-
   return (
     <div className="tool-container tool-container-full">
       <div className="tool-header">
         <h2>Text Diff 비교</h2>
-        <p>두 텍스트의 차이점을 문자 단위로 실시간 비교합니다.</p>
+        <p>두 텍스트의 차이점을 줄 단위로 실시간 비교합니다.</p>
       </div>
 
       <div className="diff-container">
@@ -323,17 +712,25 @@ function DiffTool() {
             </div>
           </div>
           <div ref={leftEditorRef} className="diff-editor">
-            <div
-              ref={leftRef}
-              className="diff-input-layer"
-              contentEditable
-              onInput={handleLeftInput}
-              onKeyDown={handleKeyDown}
-              onPaste={handlePaste}
-              onDrop={handleDrop}
-              suppressContentEditableWarning
-              data-placeholder="원본 텍스트를 입력하세요..."
-            />
+            <div ref={leftRef} className="diff-input-layer">
+              {leftLines.map((line, idx) => {
+                const isPlaceholder = !line && idx === 0 && leftLines.length === 1;
+                return (
+                  <div
+                    key={idx}
+                    className={`diff-line ${isPlaceholder ? 'diff-line-placeholder' : ''}`}
+                    contentEditable
+                    suppressContentEditableWarning
+                    onInput={(e) => handleLineInput(idx, 'left', e)}
+                    onKeyDown={(e) => handleLineKeyDown(e, idx, 'left')}
+                    onPaste={(e) => handlePaste(e, idx, 'left')}
+                    onDrop={handleDrop}
+                    data-placeholder={isPlaceholder ? "원본 텍스트를 입력하세요..." : ""}
+                    suppressHydrationWarning
+                  />
+                );
+              })}
+            </div>
           </div>
         </div>
 
@@ -350,22 +747,26 @@ function DiffTool() {
             </div>
           </div>
           <div ref={rightEditorRef} className="diff-editor">
-            {/* 하이라이트 레이어 */}
-            <div className="diff-highlight-layer">
-              {diff.map((d, idx) => renderHighlightLine(d, idx))}
+            <div ref={rightRef} className="diff-input-layer">
+              {displayRightLines.map((line, idx) => {
+                const isDiff = idx < lineDiffFlags.length && lineDiffFlags[idx] === true;
+                const isPlaceholder = !line && idx === 0 && displayRightLines.length === 1 && rightLines.length <= 1;
+                return (
+                  <div
+                    key={idx}
+                    className={`diff-line ${isDiff ? 'diff-line-diff' : ''} ${isPlaceholder ? 'diff-line-placeholder' : ''}`}
+                    contentEditable
+                    suppressContentEditableWarning
+                    onInput={(e) => handleLineInput(idx, 'right', e)}
+                    onKeyDown={(e) => handleLineKeyDown(e, idx, 'right')}
+                    onPaste={(e) => handlePaste(e, idx, 'right')}
+                    onDrop={handleDrop}
+                    data-placeholder={isPlaceholder ? "비교할 텍스트를 입력하세요..." : ""}
+                    suppressHydrationWarning
+                  />
+                );
+              })}
             </div>
-            {/* 입력 레이어 */}
-            <div
-              ref={rightRef}
-              className="diff-input-layer"
-              contentEditable
-              onInput={handleRightInput}
-              onKeyDown={handleKeyDown}
-              onPaste={handlePaste}
-              onDrop={handleDrop}
-              suppressContentEditableWarning
-              data-placeholder="비교할 텍스트를 입력하세요..."
-            />
           </div>
         </div>
       </div>

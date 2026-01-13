@@ -147,6 +147,7 @@
 .tool-container-full {
   max-width: 100%;
   margin: 0 auto;
+  overflow-x: hidden;
 }
 
 .tool-grid {
@@ -618,12 +619,16 @@ textarea.input-field.textarea-flex {
   grid-template-columns: 1fr 1fr;
   gap: 16px;
   align-items: stretch;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .diff-card {
   display: flex;
   flex-direction: column;
   margin-bottom: 0;
+  min-width: 0;
+  max-width: 100%;
 }
 
 /* Diff Textarea */
@@ -648,41 +653,73 @@ textarea.input-field.textarea-flex {
   font-family: 'Geist Mono', monospace;
   font-size: 13px;
   line-height: 1.6;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
   box-sizing: border-box;
   min-height: 200px;
+  max-width: 100%;
 }
 
 .diff-highlight-layer {
   position: absolute;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
   padding: 8px 12px;
   pointer-events: none;
-  white-space: pre-wrap;
-  word-break: break-all;
+  white-space: pre;
+  word-break: normal;
   color: transparent;
-  overflow: hidden;
+  overflow: visible;
   box-sizing: border-box;
+  min-width: 100%;
+  width: max-content;
 }
 
 .diff-highlight-line {
   min-height: 1.6em;
   color: transparent;
+  white-space: pre;
 }
 
 .diff-input-layer {
   position: relative;
   min-height: 100%;
+  min-width: 100%;
+  width: max-content;
   padding: 8px 12px;
   color: var(--text-primary);
   background: transparent;
   outline: none;
-  white-space: pre-wrap;
-  word-break: break-all;
   caret-color: var(--text-primary);
+}
+
+.diff-line {
+  min-height: 1.6em;
+  white-space: pre;
+  word-break: normal;
+  outline: none;
+  position: relative;
+  color: var(--text-primary);
+  background-color: transparent;
+  transition: background-color 0.15s ease;
+}
+
+.diff-line:focus {
+  outline: none;
+}
+
+.diff-line.diff-line-diff {
+  background-color: hsla(45, 93%, 47%, 0.2);
+  border-left: 3px solid #eab308;
+  margin-left: -12px;
+  padding-left: 9px;
+}
+
+.diff-line.diff-line-placeholder:empty::before {
+  content: attr(data-placeholder);
+  color: var(--text-muted);
+  font-style: italic;
+  pointer-events: none;
 }
 
 .diff-input-layer:empty::before {
@@ -710,6 +747,18 @@ textarea.input-field.textarea-flex {
   border-left: 3px solid #eab308;
   margin-left: -12px;
   padding-left: 9px;
+}
+
+.diff-highlight-line.diff-line-diff {
+  background: hsla(45, 93%, 47%, 0.2);
+  border-left: 3px solid #eab308;
+  margin-left: -12px;
+  padding-left: 9px;
+}
+
+/* 문자 단위 하이라이트 - span 요소용 */
+.diff-highlight-line .diff-line-diff {
+  background: hsla(45, 93%, 47%, 0.2);
 }
 
 /* 문자 단위 하이라이트 */
