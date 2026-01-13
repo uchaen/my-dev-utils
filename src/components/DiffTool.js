@@ -25,17 +25,142 @@ function DiffTool() {
     return lines.length === 0 ? [''] : lines;
   }, [right]);
   
-  // 같은 index의 줄이 다른지 확인
-  const lineDiffFlags = useMemo(() => {
+  // LCS 기반 문자 단위 diff 계산 함수
+  const computeCharDiff = (leftText, rightText) => {
+    if (leftText === rightText) {
+      return { left: [], right: [] };
+    }
+
+    const leftChars = [...leftText];
+    const rightChars = [...rightText];
+    const m = leftChars.length;
+    const n = rightChars.length;
+
+    // LCS 테이블 생성
+    const dp = Array(m + 1).fill(null).map(() => Array(n + 1).fill(0));
+    for (let i = 1; i <= m; i++) {
+      for (let j = 1; j <= n; j++) {
+        if (leftChars[i - 1] === rightChars[j - 1]) {
+          dp[i][j] = dp[i - 1][j - 1] + 1;
+        } else {
+          dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+        }
+      }
+    }
+
+    // LCS 역추적하여 diff segments 생성
+    const leftSegments = [];
+    const rightSegments = [];
+    let i = m, j = n;
+
+    while (i > 0 || j > 0) {
+      if (i > 0 && j > 0 && leftChars[i - 1] === rightChars[j - 1]) {
+        // 공통 문자
+        leftSegments.unshift({ type: 'common', start: i - 1, end: i });
+        rightSegments.unshift({ type: 'common', start: j - 1, end: j });
+        i--;
+        j--;
+      } else if (j > 0 && (i === 0 || dp[i][j - 1] >= dp[i - 1][j])) {
+        // 오른쪽에만 있는 문자 (추가)
+        rightSegments.unshift({ type: 'added', start: j - 1, end: j });
+        j--;
+      } else if (i > 0) {
+        // 왼쪽에만 있는 문자 (삭제)
+        leftSegments.unshift({ type: 'removed', start: i - 1, end: i });
+        i--;
+      }
+    }
+
+    // 연속된 같은 타입의 segments 병합
+    const mergeSegments = (segments) => {
+      if (segments.length === 0) return [];
+      const merged = [segments[0]];
+      for (let k = 1; k < segments.length; k++) {
+        const last = merged[merged.length - 1];
+        const current = segments[k];
+        if (last.type === current.type && last.end === current.start) {
+          last.end = current.end;
+        } else {
+          merged.push(current);
+        }
+      }
+      return merged;
+    };
+
+    // 연속된 같은 타입의 segments 병합
+    const leftMerged = mergeSegments(leftSegments);
+    const rightMerged = mergeSegments(rightSegments);
+    
+    // left와 right segments를 동시에 순회하면서 수정된 부분 감지
+    // common segments를 기준으로 removed와 added를 매칭
+    const leftResult = [];
+    const rightResult = [];
+    let leftIdx = 0, rightIdx = 0;
+    
+    while (leftIdx < leftMerged.length || rightIdx < rightMerged.length) {
+      const leftSeg = leftIdx < leftMerged.length ? leftMerged[leftIdx] : null;
+      const rightSeg = rightIdx < rightMerged.length ? rightMerged[rightIdx] : null;
+      
+      // 둘 다 common인 경우
+      if (leftSeg && leftSeg.type === 'common' && rightSeg && rightSeg.type === 'common') {
+        leftResult.push(leftSeg);
+        rightResult.push(rightSeg);
+        leftIdx++;
+        rightIdx++;
+      }
+      // left가 removed이고 right가 added인 경우 -> modified
+      else if (leftSeg && leftSeg.type === 'removed' && rightSeg && rightSeg.type === 'added') {
+        leftResult.push({ type: 'modified', start: leftSeg.start, end: leftSeg.end });
+        rightResult.push({ type: 'modified', start: rightSeg.start, end: rightSeg.end });
+        leftIdx++;
+        rightIdx++;
+      }
+      // left가 removed이고 right가 common이거나 없는 경우 -> removed
+      else if (leftSeg && leftSeg.type === 'removed') {
+        leftResult.push(leftSeg);
+        leftIdx++;
+      }
+      // right가 added이고 left가 common이거나 없는 경우 -> added
+      else if (rightSeg && rightSeg.type === 'added') {
+        rightResult.push(rightSeg);
+        rightIdx++;
+      }
+      // left가 common이고 right가 없는 경우
+      else if (leftSeg && leftSeg.type === 'common') {
+        leftResult.push(leftSeg);
+        leftIdx++;
+      }
+      // 예외 처리
+      else {
+        if (leftSeg) {
+          leftResult.push(leftSeg);
+          leftIdx++;
+        }
+        if (rightSeg) {
+          rightResult.push(rightSeg);
+          rightIdx++;
+        }
+      }
+    }
+
+    return {
+      left: leftResult,
+      right: rightResult
+    };
+  };
+
+  // 각 줄의 문자 단위 diff 계산
+  const charDiffs = useMemo(() => {
     const maxLen = Math.max(leftLines.length, rightLines.length);
-    const flags = [];
+    const diffs = [];
     for (let i = 0; i < maxLen; i++) {
       const leftLine = i < leftLines.length ? leftLines[i] : '';
       const rightLine = i < rightLines.length ? rightLines[i] : '';
-      flags.push(leftLine !== rightLine);
+      diffs.push(computeCharDiff(leftLine, rightLine));
     }
-    return flags;
+    return diffs;
   }, [leftLines, rightLines]);
+
 
   // 오른쪽 렌더링용 줄 배열 (왼쪽과 같은 길이로 확장)
   const displayRightLines = useMemo(() => {
@@ -712,13 +837,62 @@ function DiffTool() {
             </div>
           </div>
           <div ref={leftEditorRef} className="diff-editor">
+            <div className="diff-highlight-layer">
+              {leftLines.map((line, idx) => {
+                const diff = idx < charDiffs.length ? charDiffs[idx] : null;
+                const segments = diff ? diff.left : [];
+                return (
+                  <div key={idx} className="diff-highlight-line">
+                    {segments.length > 0 ? (
+                      (() => {
+                        const parts = [];
+                        let lastIndex = 0;
+                        segments.forEach((segment) => {
+                          if (segment.start > lastIndex) {
+                            parts.push(
+                              <span key={`${idx}-${lastIndex}-common`}>
+                                {line.substring(lastIndex, segment.start)}
+                              </span>
+                            );
+                          }
+                          parts.push(
+                            <span
+                              key={`${idx}-${segment.start}-${segment.type}`}
+                              className={
+                                segment.type === 'removed' ? 'diff-char-removed' :
+                                segment.type === 'modified' ? 'diff-char-modified' : ''
+                              }
+                            >
+                              {line.substring(segment.start, segment.end)}
+                            </span>
+                          );
+                          lastIndex = segment.end;
+                        });
+                        if (lastIndex < line.length) {
+                          parts.push(
+                            <span key={`${idx}-${lastIndex}-end`}>
+                              {line.substring(lastIndex)}
+                            </span>
+                          );
+                        }
+                        return parts;
+                      })()
+                    ) : (
+                      <span>{line}</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
             <div ref={leftRef} className="diff-input-layer">
               {leftLines.map((line, idx) => {
                 const isPlaceholder = !line && idx === 0 && leftLines.length === 1;
+                const diff = idx < charDiffs.length ? charDiffs[idx] : null;
+                const hasRemoved = diff && diff.left.some(s => s.type === 'removed' || s.type === 'modified');
                 return (
                   <div
                     key={idx}
-                    className={`diff-line ${isPlaceholder ? 'diff-line-placeholder' : ''}`}
+                    className={`diff-line ${isPlaceholder ? 'diff-line-placeholder' : ''} ${hasRemoved ? 'diff-line-left-border' : ''}`}
                     contentEditable
                     suppressContentEditableWarning
                     onInput={(e) => handleLineInput(idx, 'left', e)}
@@ -747,14 +921,60 @@ function DiffTool() {
             </div>
           </div>
           <div ref={rightEditorRef} className="diff-editor">
+            <div className="diff-highlight-layer">
+              {displayRightLines.map((line, idx) => {
+                const diff = idx < charDiffs.length ? charDiffs[idx] : null;
+                const segments = diff ? diff.right : [];
+                return (
+                  <div key={idx} className="diff-highlight-line">
+                    {segments.length > 0 ? (
+                      (() => {
+                        const parts = [];
+                        let lastIndex = 0;
+                        segments.forEach((segment) => {
+                          if (segment.start > lastIndex) {
+                            parts.push(
+                              <span key={`${idx}-${lastIndex}-common`}>
+                                {line.substring(lastIndex, segment.start)}
+                              </span>
+                            );
+                          }
+                          parts.push(
+                            <span
+                              key={`${idx}-${segment.start}-${segment.type}`}
+                              className={
+                                segment.type === 'added' ? 'diff-char-added' :
+                                segment.type === 'modified' ? 'diff-char-modified' : ''
+                              }
+                            >
+                              {line.substring(segment.start, segment.end)}
+                            </span>
+                          );
+                          lastIndex = segment.end;
+                        });
+                        if (lastIndex < line.length) {
+                          parts.push(
+                            <span key={`${idx}-${lastIndex}-end`}>
+                              {line.substring(lastIndex)}
+                            </span>
+                          );
+                        }
+                        return parts;
+                      })()
+                    ) : (
+                      <span>{line}</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
             <div ref={rightRef} className="diff-input-layer">
               {displayRightLines.map((line, idx) => {
-                const isDiff = idx < lineDiffFlags.length && lineDiffFlags[idx] === true;
                 const isPlaceholder = !line && idx === 0 && displayRightLines.length === 1 && rightLines.length <= 1;
                 return (
                   <div
                     key={idx}
-                    className={`diff-line ${isDiff ? 'diff-line-diff' : ''} ${isPlaceholder ? 'diff-line-placeholder' : ''}`}
+                    className={`diff-line ${isPlaceholder ? 'diff-line-placeholder' : ''}`}
                     contentEditable
                     suppressContentEditableWarning
                     onInput={(e) => handleLineInput(idx, 'right', e)}

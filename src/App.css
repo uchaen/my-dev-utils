@@ -668,16 +668,17 @@ textarea.input-field.textarea-flex {
   pointer-events: none;
   white-space: pre;
   word-break: normal;
-  color: transparent;
+  color: var(--text-primary);
   overflow: visible;
   box-sizing: border-box;
   min-width: 100%;
   width: max-content;
+  z-index: 1;
 }
 
 .diff-highlight-line {
   min-height: 1.6em;
-  color: transparent;
+  color: var(--text-primary);
   white-space: pre;
 }
 
@@ -687,10 +688,11 @@ textarea.input-field.textarea-flex {
   min-width: 100%;
   width: max-content;
   padding: 8px 12px;
-  color: var(--text-primary);
+  color: transparent;
   background: transparent;
   outline: none;
   caret-color: var(--text-primary);
+  z-index: 2;
 }
 
 .diff-line {
@@ -699,7 +701,7 @@ textarea.input-field.textarea-flex {
   word-break: normal;
   outline: none;
   position: relative;
-  color: var(--text-primary);
+  color: transparent;
   background-color: transparent;
   transition: background-color 0.15s ease;
 }
@@ -709,8 +711,8 @@ textarea.input-field.textarea-flex {
 }
 
 .diff-line.diff-line-diff {
-  background-color: hsla(45, 93%, 47%, 0.2);
-  border-left: 3px solid #eab308;
+  /* background-color: hsla(0, 0%, 50%, 0.2); */
+  border-left: 3px solid #6b7280;
   margin-left: -12px;
   padding-left: 9px;
 }
@@ -750,8 +752,8 @@ textarea.input-field.textarea-flex {
 }
 
 .diff-highlight-line.diff-line-diff {
-  background: hsla(45, 93%, 47%, 0.2);
-  border-left: 3px solid #eab308;
+  background: hsla(0, 0%, 50%, 0.2);
+  border-left: 3px solid #6b7280;
   margin-left: -12px;
   padding-left: 9px;
 }
@@ -763,19 +765,70 @@ textarea.input-field.textarea-flex {
 
 /* 문자 단위 하이라이트 */
 .diff-char-added {
-  background: hsla(142, 76%, 36%, 0.4);
-  color: transparent;
+  background-color: hsla(142, 76%, 36%, 0.4);
+  color: var(--text-primary);
   border-radius: 2px;
 }
 
 .diff-char-removed {
-  background: hsla(0, 84%, 60%, 0.4);
-  color: transparent;
+  background-color: hsla(0, 84%, 60%, 0.4);
+  color: var(--text-primary);
+  border-radius: 2px;
+  text-decoration: line-through;
+}
+
+.diff-char-modified {
+  background-color: hsla(45, 93%, 47%, 0.4);
+  color: var(--text-primary);
   border-radius: 2px;
 }
 
 .diff-removed-text {
   color: transparent;
+}
+
+.diff-highlight-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 8px 12px;
+  pointer-events: none;
+  white-space: pre;
+  word-break: normal;
+  color: var(--text-primary);
+  overflow: visible;
+  box-sizing: border-box;
+  min-width: 100%;
+  width: max-content;
+  z-index: 1;
+}
+
+.diff-input-layer {
+  position: relative;
+  min-height: 100%;
+  min-width: 100%;
+  width: max-content;
+  padding: 8px 12px;
+  color: transparent;
+  background: transparent;
+  outline: none;
+  caret-color: var(--text-primary);
+  z-index: 2;
+}
+
+.diff-line {
+  min-height: 1.6em;
+  white-space: pre;
+  word-break: normal;
+  outline: none;
+  position: relative;
+  color: transparent;
+  background-color: transparent;
+  transition: background-color 0.15s ease;
+}
+
+.diff-line:focus {
+  outline: none;
 }
 
 /* JSON Beautifier 구문 강조 */
