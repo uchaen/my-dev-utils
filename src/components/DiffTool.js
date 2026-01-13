@@ -13,6 +13,9 @@ function DiffTool() {
   const rightRef = useRef(null);
   const leftEditorRef = useRef(null);
   const rightEditorRef = useRef(null);
+  const isSelectingRef = useRef(false);
+  const selectStartRef = useRef(null);
+  const selectSideRef = useRef(null);
 
   // 각 줄을 배열로 분리하고, 같은 index의 줄이 다른지 확인
   // 빈 문자열인 경우 빈 배열이 되므로, 최소 하나의 빈 줄은 표시
@@ -305,6 +308,39 @@ function DiffTool() {
 
   // 줄 추가 핸들러
   const handleLineKeyDown = (e, index, side) => {
+    // Ctrl+A (또는 Cmd+A) 전체 선택
+    if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+      e.preventDefault();
+      const editorRef = side === 'left' ? leftRef : rightRef;
+      const lineDivs = Array.from(editorRef.current?.querySelectorAll('.diff-line') || []);
+      
+      if (lineDivs.length > 0) {
+        const selection = window.getSelection();
+        const range = document.createRange();
+        
+        const firstLine = lineDivs[0];
+        const lastLine = lineDivs[lineDivs.length - 1];
+        
+        // 첫 번째 줄의 시작
+        if (firstLine.firstChild && firstLine.firstChild.nodeType === Node.TEXT_NODE) {
+          range.setStart(firstLine.firstChild, 0);
+        } else {
+          range.setStart(firstLine, 0);
+        }
+        
+        // 마지막 줄의 끝
+        if (lastLine.firstChild && lastLine.firstChild.nodeType === Node.TEXT_NODE) {
+          range.setEnd(lastLine.firstChild, lastLine.firstChild.textContent.length);
+        } else {
+          range.setEnd(lastLine, lastLine.childNodes.length);
+        }
+        
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+      return;
+    }
+    
     if (e.key === 'Enter') {
       e.preventDefault();
       const target = e.currentTarget;
@@ -816,6 +852,249 @@ function DiffTool() {
     e.preventDefault();
   };
 
+  // 여러 줄에 걸친 선택된 텍스트 가져오기
+  const getSelectedText = (editorRef) => {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
+      return '';
+    }
+
+    const range = selection.getRangeAt(0);
+    const lineDivs = Array.from(editorRef.current?.querySelectorAll('.diff-line') || []);
+    
+    if (lineDivs.length === 0) {
+      return selection.toString();
+    }
+
+    // 선택 범위가 포함하는 모든 줄 찾기
+    const selectedLines = [];
+    let startLineIdx = -1;
+    let endLineIdx = -1;
+
+    for (let i = 0; i < lineDivs.length; i++) {
+      const lineDiv = lineDivs[i];
+      const lineRange = document.createRange();
+      lineRange.selectNodeContents(lineDiv);
+      
+      const startCompare = range.compareBoundaryPoints(Range.START_TO_START, lineRange);
+      const endCompare = range.compareBoundaryPoints(Range.END_TO_END, lineRange);
+      
+      // 선택이 이 줄과 겹치는지 확인
+      if (startCompare <= 0 && endCompare >= 0) {
+        if (startLineIdx === -1) {
+          startLineIdx = i;
+        }
+        endLineIdx = i;
+      }
+    }
+
+    if (startLineIdx === -1 || endLineIdx === -1) {
+      return selection.toString();
+    }
+
+    // 각 줄의 텍스트 추출
+    for (let i = startLineIdx; i <= endLineIdx; i++) {
+      const lineDiv = lineDivs[i];
+      if (lineDiv) {
+        const lineText = lineDiv.textContent || '';
+        
+        if (i === startLineIdx && i === endLineIdx) {
+          // 같은 줄에서 선택 - 부분 선택
+          const tempRange = document.createRange();
+          tempRange.setStart(lineDiv, 0);
+          tempRange.setEnd(range.startContainer, range.startOffset);
+          const startOffset = tempRange.toString().length;
+          
+          tempRange.setStart(lineDiv, 0);
+          tempRange.setEnd(range.endContainer, range.endOffset);
+          const endOffset = tempRange.toString().length;
+          
+          selectedLines.push(lineText.substring(startOffset, endOffset));
+        } else if (i === startLineIdx) {
+          // 첫 줄 - 시작 부분부터 끝까지
+          const tempRange = document.createRange();
+          tempRange.setStart(lineDiv, 0);
+          tempRange.setEnd(range.startContainer, range.startOffset);
+          const startOffset = tempRange.toString().length;
+          selectedLines.push(lineText.substring(startOffset));
+        } else if (i === endLineIdx) {
+          // 마지막 줄 - 시작부터 끝 부분까지
+          const tempRange = document.createRange();
+          tempRange.setStart(lineDiv, 0);
+          tempRange.setEnd(range.endContainer, range.endOffset);
+          const endOffset = tempRange.toString().length;
+          selectedLines.push(lineText.substring(0, endOffset));
+        } else {
+          // 중간 줄 - 전체
+          selectedLines.push(lineText);
+        }
+      }
+    }
+
+    return selectedLines.join('\n');
+  };
+
+  // 드래그 시작
+  const handleMouseDown = (e, side) => {
+    if (e.button !== 0) return; // 왼쪽 버튼만
+    
+    const target = e.target.closest('.diff-line');
+    if (!target) return;
+    
+    isSelectingRef.current = true;
+    selectSideRef.current = side;
+    
+    const editorRef = side === 'left' ? leftRef : rightRef;
+    const lineDivs = Array.from(editorRef.current?.querySelectorAll('.diff-line') || []);
+    const startIdx = lineDivs.indexOf(target);
+    
+    if (startIdx !== -1) {
+      // 마우스 위치에 따른 시작 오프셋 계산
+      const range = document.caretRangeFromPoint(e.clientX, e.clientY);
+      let startOffset = 0;
+      
+      if (range) {
+        const tempRange = document.createRange();
+        tempRange.setStart(target, 0);
+        tempRange.setEnd(range.startContainer, range.startOffset);
+        startOffset = tempRange.toString().length;
+      }
+      
+      selectStartRef.current = { lineIdx: startIdx, offset: startOffset, target };
+      
+      // 선택 시작
+      const selection = window.getSelection();
+      const newRange = document.createRange();
+      if (target.firstChild && target.firstChild.nodeType === Node.TEXT_NODE) {
+        newRange.setStart(target.firstChild, Math.min(startOffset, target.firstChild.textContent.length));
+        newRange.setEnd(target.firstChild, Math.min(startOffset, target.firstChild.textContent.length));
+      } else {
+        newRange.setStart(target, 0);
+        newRange.setEnd(target, 0);
+      }
+      selection.removeAllRanges();
+      selection.addRange(newRange);
+      
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      e.preventDefault();
+    }
+  };
+
+  // 드래그 중
+  const handleMouseMove = (e) => {
+    if (!isSelectingRef.current || !selectStartRef.current) return;
+    
+    const side = selectSideRef.current;
+    const editorRef = side === 'left' ? leftRef : rightRef;
+    const lineDivs = Array.from(editorRef.current?.querySelectorAll('.diff-line') || []);
+    
+    // 마우스 위치에 있는 줄 찾기
+    const point = { x: e.clientX, y: e.clientY };
+    const elementBelow = document.elementFromPoint(point.x, point.y);
+    const targetLine = elementBelow?.closest('.diff-line');
+    
+    if (!targetLine || !lineDivs.includes(targetLine)) return;
+    
+    const endIdx = lineDivs.indexOf(targetLine);
+    const startIdx = selectStartRef.current.lineIdx;
+    
+    // 마우스 위치에 따른 끝 오프셋 계산
+    const range = document.caretRangeFromPoint(e.clientX, e.clientY);
+    let endOffset = 0;
+    
+    if (range) {
+      const tempRange = document.createRange();
+      tempRange.setStart(targetLine, 0);
+      tempRange.setEnd(range.startContainer, range.startOffset);
+      endOffset = tempRange.toString().length;
+    }
+    
+    // 선택 범위 확장
+    const selection = window.getSelection();
+    const newRange = document.createRange();
+    
+    // 시작 지점과 끝 지점 결정 (드래그 방향에 따라)
+    let actualStartIdx, actualEndIdx, actualStartOffset, actualEndOffset;
+    
+    if (endIdx < startIdx) {
+      // 오른쪽에서 왼쪽으로 드래그 (역방향)
+      actualStartIdx = endIdx;
+      actualEndIdx = startIdx;
+      actualStartOffset = endOffset;
+      actualEndOffset = selectStartRef.current.offset;
+    } else if (endIdx > startIdx) {
+      // 왼쪽에서 오른쪽으로 드래그 (정방향)
+      actualStartIdx = startIdx;
+      actualEndIdx = endIdx;
+      actualStartOffset = selectStartRef.current.offset;
+      actualEndOffset = endOffset;
+    } else {
+      // 같은 줄
+      actualStartIdx = startIdx;
+      actualEndIdx = endIdx;
+      actualStartOffset = Math.min(selectStartRef.current.offset, endOffset);
+      actualEndOffset = Math.max(selectStartRef.current.offset, endOffset);
+    }
+    
+    const startLine = lineDivs[actualStartIdx];
+    const endLine = lineDivs[actualEndIdx];
+    
+    if (startLine && endLine) {
+      // 시작 지점 설정
+      if (startLine.firstChild && startLine.firstChild.nodeType === Node.TEXT_NODE) {
+        const startOffsetFinal = Math.min(actualStartOffset, startLine.firstChild.textContent.length);
+        newRange.setStart(startLine.firstChild, startOffsetFinal);
+      } else {
+        newRange.setStart(startLine, 0);
+      }
+      
+      // 끝 지점 설정
+      if (endLine.firstChild && endLine.firstChild.nodeType === Node.TEXT_NODE) {
+        const endOffsetFinal = Math.min(actualEndOffset, endLine.firstChild.textContent.length);
+        newRange.setEnd(endLine.firstChild, endOffsetFinal);
+      } else {
+        newRange.setEnd(endLine, endLine.childNodes.length);
+      }
+      
+      selection.removeAllRanges();
+      selection.addRange(newRange);
+    }
+    
+    e.preventDefault();
+  };
+
+  // 드래그 종료
+  const handleMouseUp = (e) => {
+    isSelectingRef.current = false;
+    selectStartRef.current = null;
+    selectSideRef.current = null;
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', handleMouseUp);
+  };
+
+  // 복사 기능 수정 (선택된 텍스트 복사)
+  const handleCopy = (e, side) => {
+    const editorRef = side === 'left' ? leftRef : rightRef;
+    const selectedText = getSelectedText(editorRef);
+    
+    if (selectedText) {
+      e.clipboardData.setData('text/plain', selectedText);
+      e.preventDefault();
+      setCopiedKey(side);
+      setTimeout(() => setCopiedKey(''), 1500);
+    } else {
+      // 선택된 텍스트가 없으면 전체 복사
+      const text = side === 'left' ? left : right;
+      if (text) {
+        e.clipboardData.setData('text/plain', text);
+        e.preventDefault();
+        setCopiedKey(side);
+        setTimeout(() => setCopiedKey(''), 1500);
+      }
+    }
+  };
+
   return (
     <div className="tool-container tool-container-full">
       <div className="tool-header">
@@ -899,6 +1178,8 @@ function DiffTool() {
                     onKeyDown={(e) => handleLineKeyDown(e, idx, 'left')}
                     onPaste={(e) => handlePaste(e, idx, 'left')}
                     onDrop={handleDrop}
+                    onMouseDown={(e) => handleMouseDown(e, 'left')}
+                    onCopy={(e) => handleCopy(e, 'left')}
                     data-placeholder={isPlaceholder ? "원본 텍스트를 입력하세요..." : ""}
                     suppressHydrationWarning
                   />
@@ -981,6 +1262,8 @@ function DiffTool() {
                     onKeyDown={(e) => handleLineKeyDown(e, idx, 'right')}
                     onPaste={(e) => handlePaste(e, idx, 'right')}
                     onDrop={handleDrop}
+                    onMouseDown={(e) => handleMouseDown(e, 'right')}
+                    onCopy={(e) => handleCopy(e, 'right')}
                     data-placeholder={isPlaceholder ? "비교할 텍스트를 입력하세요..." : ""}
                     suppressHydrationWarning
                   />
