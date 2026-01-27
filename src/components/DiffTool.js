@@ -16,6 +16,9 @@ function DiffTool() {
   const isSelectingRef = useRef(false);
   const selectStartRef = useRef(null);
   const selectSideRef = useRef(null);
+  const historyRef = useRef([{ left, right }]);
+  const historyIndexRef = useRef(0);
+  const isUndoingRef = useRef(false);
 
   // 각 줄을 배열로 분리하고, 같은 index의 줄이 다른지 확인
   // 빈 문자열인 경우 빈 배열이 되므로, 최소 하나의 빈 줄은 표시
@@ -236,6 +239,59 @@ function DiffTool() {
     rightEl.style.height = maxHeight + 'px';
   }, [left, right, leftLines, rightLines]);
 
+  // 히스토리에 상태 저장
+  const saveToHistory = (newLeft, newRight) => {
+    if (isUndoingRef.current) {
+      return; // Undo 중에는 히스토리에 저장하지 않음
+    }
+    
+    const currentState = { left: newLeft, right: newRight };
+    const lastState = historyRef.current[historyIndexRef.current];
+    
+    // 이전 상태와 같으면 저장하지 않음
+    if (lastState && lastState.left === newLeft && lastState.right === newRight) {
+      return;
+    }
+    
+    // 현재 인덱스 이후의 히스토리 제거 (새로운 변경이 있으면)
+    historyRef.current = historyRef.current.slice(0, historyIndexRef.current + 1);
+    
+    // 새 상태 추가
+    historyRef.current.push(currentState);
+    historyIndexRef.current = historyRef.current.length - 1;
+    
+    // 히스토리 크기 제한 (최대 50개)
+    if (historyRef.current.length > 50) {
+      historyRef.current.shift();
+      historyIndexRef.current--;
+    }
+  };
+
+  // 히스토리에서 이전 상태로 복원
+  const undo = () => {
+    if (historyIndexRef.current > 0) {
+      isUndoingRef.current = true;
+      historyIndexRef.current--;
+      const prevState = historyRef.current[historyIndexRef.current];
+      setLeft(prevState.left);
+      setRight(prevState.right);
+      setTimeout(() => {
+        isUndoingRef.current = false;
+      }, 0);
+    }
+  };
+
+  // 상태 변경 래퍼 함수
+  const updateLeft = (newLeft) => {
+    saveToHistory(newLeft, right);
+    setLeft(newLeft);
+  };
+
+  const updateRight = (newRight) => {
+    saveToHistory(left, newRight);
+    setRight(newRight);
+  };
+
   // sessionStorage에 저장
   useEffect(() => {
     if (left) {
@@ -256,12 +312,12 @@ function DiffTool() {
   const [copiedKey, setCopiedKey] = useState('');
 
   const clearLeft = () => {
-    setLeft('');
+    updateLeft('');
     sessionStorage.removeItem('diff-left');
   };
 
   const clearRight = () => {
-    setRight('');
+    updateRight('');
     sessionStorage.removeItem('diff-right');
   };
 
@@ -294,7 +350,7 @@ function DiffTool() {
         newLines.push('');
       }
       newLines[index] = newText;
-      setLeft(newLines.join('\n'));
+      updateLeft(newLines.join('\n'));
     } else if (side === 'right') {
       const newLines = [...rightLines];
       // index가 범위를 벗어나면 배열을 확장
@@ -302,7 +358,7 @@ function DiffTool() {
         newLines.push('');
       }
       newLines[index] = newText;
-      setRight(newLines.join('\n'));
+      updateRight(newLines.join('\n'));
     }
   };
 
@@ -379,7 +435,7 @@ function DiffTool() {
           newLines[index] = beforeCursor;
           newLines.splice(index + 1, 0, afterCursor);
         }
-        setLeft(newLines.join('\n'));
+        updateLeft(newLines.join('\n'));
       } else {
         // 오른쪽의 경우, 실제 rightLines를 기준으로 처리
         const newLines = [...rightLines];
@@ -399,7 +455,7 @@ function DiffTool() {
           // 빈 줄 영역이면 마지막에 추가
           newLines.push('');
         }
-        setRight(newLines.join('\n'));
+        updateRight(newLines.join('\n'));
       }
       
       // DOM 직접 업데이트 (현재 줄도 업데이트)
@@ -464,9 +520,9 @@ function DiffTool() {
           newLines.splice(index, 1);
           
           if (side === 'left') {
-            setLeft(newLines.join('\n'));
+            updateLeft(newLines.join('\n'));
           } else {
-            setRight(newLines.join('\n'));
+            updateRight(newLines.join('\n'));
           }
           
           // DOM 직접 업데이트 (줄이 삭제되므로 인덱스 시프트 고려)
@@ -528,9 +584,9 @@ function DiffTool() {
         if (index < newLines.length) {
           newLines.splice(index, 1);
           if (side === 'left') {
-            setLeft(newLines.join('\n'));
+            updateLeft(newLines.join('\n'));
           } else {
-            setRight(newLines.join('\n'));
+            updateRight(newLines.join('\n'));
           }
         }
         
@@ -579,7 +635,7 @@ function DiffTool() {
             const currentLineLength = currentLineText.length; // 합쳐지기 전 현재 줄의 길이
             newLines[index] = mergedText;
             newLines.splice(index + 1, 1);
-            setLeft(newLines.join('\n'));
+            updateLeft(newLines.join('\n'));
             
             // DOM 직접 업데이트 (줄이 삭제되므로 인덱스 시프트 고려)
             setTimeout(() => {
@@ -636,7 +692,7 @@ function DiffTool() {
             const currentLineLength = currentLineText.length; // 합쳐지기 전 현재 줄의 길이
             newLines[index] = mergedText;
             newLines.splice(index + 1, 1);
-            setRight(newLines.join('\n'));
+            updateRight(newLines.join('\n'));
             
             // DOM 직접 업데이트 (줄이 삭제되므로 인덱스 시프트 고려)
             setTimeout(() => {
@@ -812,7 +868,7 @@ function DiffTool() {
     const newText = newLines.join('\n');
     
     if (side === 'left') {
-      setLeft(newText);
+      updateLeft(newText);
       // DOM 직접 업데이트 (포커스가 있는 요소도 업데이트)
       setTimeout(() => {
         if (leftRef.current) {
@@ -829,7 +885,7 @@ function DiffTool() {
         }
       }, 0);
     } else {
-      setRight(newText);
+      updateRight(newText);
       // DOM 직접 업데이트 (포커스가 있는 요소도 업데이트)
       setTimeout(() => {
         if (rightRef.current) {
