@@ -31,3 +31,6 @@ Unix Timestamp와 날짜/시간 간의 실시간 변환을 수행합니다. 현�
 
 ### 🔐 Jasypt 암호화/복호화
 Java Jasypt의 PBEWithMD5AndDES 방식으로 텍스트를 실시간 암호화/복호화합니다.
+
+### 🔤 Backslash Escape/Unescape
+이스케이프 시퀀스(`\`, `"`, `\n` 등)를 특수문자로 변환(Escape)하거나, 이스케이프 해제(Unescape)하여 원래 문자로 복원합니다.

@@ -9,6 +9,7 @@ import TimestampConverter from './components/TimestampConverter';
 import TextSizeCalculator from './components/TextSizeCalculator';
 import DiffTool from './components/DiffTool';
 import JasyptEncryptor from './components/JasyptEncryptor';
+import BackslashEscaper from './components/BackslashEscaper';
 
 const menuItems = [
   { path: '/jwt-encode', name: 'JWT Encoder' },
@@ -19,6 +20,7 @@ const menuItems = [
   { path: '/text-size', name: 'Text Size 계산기' },
   { path: '/diff', name: 'Text Diff 비교' },
   { path: '/jasypt', name: 'Jasypt 암호화/복호화' },
+  { path: '/backslash', name: 'Backslash Escape/Unescape' },
 ];
 
 // Simple SVG Icons
@@ -125,6 +127,7 @@ function App() {
             <Route path="/text-size" element={<TextSizeCalculator />} />
             <Route path="/diff" element={<DiffTool />} />
             <Route path="/jasypt" element={<JasyptEncryptor />} />
+            <Route path="/backslash" element={<BackslashEscaper />} />
           </Routes>
         </main>
       </div>

@@ -1023,3 +1023,41 @@ textarea.input-field.textarea-flex {
 .mb-6 {
   margin-bottom: 6px;
 }
+
+/* Escape Reference Table */
+.escape-reference {
+  overflow-x: auto;
+}
+
+.escape-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.escape-table th,
+.escape-table td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.escape-table th {
+  background: var(--bg-muted);
+  font-weight: 500;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.escape-table tr:last-child td {
+  border-bottom: none;
+}
+
+.escape-table code {
+  font-family: 'Geist Mono', monospace;
+  background: var(--bg-muted);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--accent-primary);
+}
