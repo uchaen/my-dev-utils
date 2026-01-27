@@ -364,6 +364,13 @@ function DiffTool() {
 
   // 줄 추가 핸들러
   const handleLineKeyDown = (e, index, side) => {
+    // Ctrl+Z (또는 Cmd+Z) Undo
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+      e.preventDefault();
+      undo();
+      return;
+    }
+    
     // Ctrl+A (또는 Cmd+A) 전체 선택
     if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
       e.preventDefault();
